@@ -8,13 +8,76 @@
             <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css">
             <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
             <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js"></script>
+            <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css"> 
         </head>
         
         <body>
             <br><br>
             <div class="container">
                 <div class="row justify-content-center">
-                    <div class="col-lg-6">
+                    <div class="col-lg-3">
+                        <div class="card">
+                            <div class="card-head text-center">
+                                Building Details
+                            </div>
+                            <div class="card-body">
+                                {% if message %}
+                                    <div class="alert alert-danger" role="alert">
+                                        {{message}}
+                                    </div>
+                                {% endif %}
+                                <form method="post">{% csrf_token %}
+                                    <input type="text" class="form-control" required name="name" placeholder="Enter The Name Of Building" value="{{bobj.name}}"><br>
+                                    <select class="form-control" required name="invoice-owner">
+                                        <option value="" disabled>-Select Invoice Owner-</option>
+                                        {% for i in owners %}
+                                            <option value="{{i.id}}" {% if bobj.owner.id == i.id %} selected {% endif %} >{{i.name}}</option>
+                                        {% endfor %}
+                                    </select><br>
+                                    <button class="btn btn-primary text-center" type="submit">
+                                        Save Changes
+                                    </button>
+                                </form>
+                            </div>
+                            <div class="card-footer">
+                                <br><br>
+                                Showing Color Tags : <select class="form-control" onchange="showColorApartments(this.value)">
+                                    <option>All</option>
+                                    <option value="green">Green</option>
+                                    <option value="yellow">Yellow</option>
+                                    <option value="red">Red</option>
+                                    <option value="black">Black</option>
+                                </select>
+                                <script>
+                                    function showColorApartments(a){
+                                        count = 0;
+                                        if (a == "All"){
+                                            ob = document.getElementsByClassName("abcd");
+                                            for (i=0 ; i <ob.length ; i++){
+                                                ob[i].hidden = false;
+                                            }
+                                        }
+                                        else{
+                                            ob = document.getElementsByClassName("abcd");
+                                            for (i=0 ; i <ob.length ; i++){
+                                                if (ob[i].getAttribute("class") == "abcd "+a || ob[i].getAttribute("class") == "row abcd "+a){
+                                                    count++;
+                                                    ob[i].hidden = false;
+                                                }
+                                                else{
+                                                    ob[i].hidden = true;
+                                                }
+                                            }
+                                            if (count == 0){
+                                                alert("No Apartment has that tag!");
+                                            }
+                                        }
+                                    }
+                                </script>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-9">
                         <div class="card">
                             <div class="card-head text-center">
                                 <a href="{% url 'home' %}"><-Back</a>&ensp;&ensp;&ensp; Building - {{bobj.name}}
@@ -22,9 +85,21 @@
                             <div class="card-body">
                                 {% if objs %}
                                     {% for i in objs %}
-                                        <a href="{% url 'invoices' i.id %}">
-                                            Apartment : {{i.aprt_number}}  -  {{i.name}}
-                                        </a><br><hr><br>
+                                    <div class="row abcd {{i.getShowColor}}">
+                                        <div class="col-lg-10">
+                                            <a href="{% url 'delete-apartment' i.id %}" title="Delete"><span class="fa text-danger fa-lg fa-remove"></span></a>
+                                                <a href="{% url 'invoices' i.id %}">
+                                                    Apartment : {{i.aprt_number}}  -  {{i.name}}
+                                                </a>
+                                        </div>
+                                        <div class="col-lg-1" style="background-color: {{i.getShowColor}} ; padding: 10px; border: 1px solid white;">
+
+                                        </div>
+                                        <div class="col-lg-1">
+
+                                        </div>
+                                    </div>
+                                    <hr class="abcd {{i.getShowColor}}">
                                     {% endfor %}
                                 {% else %}
                                     <a>This Building Has No Apartments To Manage Right Now.</a>

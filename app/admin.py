@@ -1,3 +1,4 @@
 from django.contrib import admin
+from .models import invoice_owner
 
-# Register your models here.
+admin.site.register(invoice_owner)

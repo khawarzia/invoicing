@@ -27,7 +27,12 @@
                                 {% endif %}
                                 <form method="post">{% csrf_token %}
                                     <input type="text" class="form-control" required name="name" placeholder="Enter The Name Of Building"><br>
-                                    <input type="text" class="form-control" required name="invoice-owner" placeholder="Enter Invoice Owner"><br>
+                                    <select class="form-control" required name="invoice-owner">
+                                        <option value="" selected disabled>-Select Invoice Owner-</option>
+                                        {% for i in objs %}
+                                            <option value="{{i.id}}">{{i.name}}</option>
+                                        {% endfor %}
+                                    </select><br>
                                     <button class="btn btn-primary text-center" type="submit">
                                         Add
                                     </button>

@@ -25,12 +25,16 @@ urlpatterns = [
 
     path("home",views.home,name="home"),
     path("new-building-form",views.building_form,name="building-form"),
+    path("delete-building/<int:id>",views.delete_building,name="delete-building"),
 
     path("apartments/<int:id>",views.apartments,name="apartments"),
     path("new-apartment-form/<int:id>",views.apartment_form,name="apartment-form"),
+    path("edit-apartment-form/<int:id>",views.edit_apartment_form,name="edit-apartment-form"),
+    path("delete-apartment/<int:id>",views.delete_apartment,name="delete-apartment"),
 
     path("invoices/<int:id>",views.invoices,name="invoices"),
     path("new-invoice-form/<int:id>",views.invoice_form,name="invoice-form"),
 
-    path("print-invoice/<uuid:id>",views.print_invoice,name="print-invoice"),
+    path("print-invoice/<int:id>",views.print_invoice,name="print-invoice"),
+    path("delete-invoice/<int:id>",views.delete_invoice,name="delete-invoice"),
 ]

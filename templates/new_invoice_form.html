@@ -8,6 +8,31 @@
             <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css">
             <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
             <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js"></script>
+            <script>
+                function changeFormBasedOnOption(a){
+                    if (a == "Transfer"){
+                        document.getElementById("bank").hidden = false;
+                        document.getElementById("bank").setAttribute("required","required");
+                        document.getElementById("transDate").hidden = false;
+                        document.getElementById("transDate").setAttribute("required","required");
+                        document.getElementById("b1").hidden = false;
+                        document.getElementById("b2").hidden = false;
+                        document.getElementById("b3").hidden = false;
+                        document.getElementById("b4").hidden = false;
+
+                    }
+                    else{
+                        document.getElementById("bank").hidden = true;
+                        document.getElementById("bank").removeAttribute("required");
+                        document.getElementById("transDate").hidden = true;
+                        document.getElementById("transDate").removeAttribute("required");
+                        document.getElementById("b1").hidden = true;
+                        document.getElementById("b2").hidden = true;
+                        document.getElementById("b3").hidden = true;
+                        document.getElementById("b4").hidden = true;
+                    }
+                }
+            </script>
         </head>
         
         <body>
@@ -28,11 +53,14 @@
                                 <form method="post">{% csrf_token %}
                                     <input type="number" class="form-control" required name="amount" placeholder="Enter The Amount"><br>
                                     <input type="number" class="form-control" required name="ramount" placeholder="Enter The Remaining Amount"><br>
-                                    <select name="payment" class="form-control" required>
+                                    <select name="payment" class="form-control" required onchange="changeFormBasedOnOption(this.value)">
                                         <option value="" disabled selected>Select Payment Option</option>
                                         <option>Cash</option>
                                         <option>Transfer</option>
                                     </select><br>
+                                    <input type="text" class="form-control" name="bank" placeholder="Enter Name Of Bank" hidden id="bank"><br id="b1" hidden>
+                                    <label id="b2" hidden>Date Of Transfer</label><br id="b3" hidden>
+                                    <input type="date" class="form-control" name="trans_date" placeholder="Enter Date Of Transfer" hidden id="transDate"><br id="b4" hidden>
                                     <label>From Date</label><br>
                                     <input type="date" class="form-control" required name="fdate" placeholder="Enter From Date"><br>
                                     <label>To Date</label><br>

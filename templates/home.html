@@ -8,12 +8,50 @@
             <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css">
             <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
             <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js"></script>
+            <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">        
         </head>
-        
         <body>
             <br><br>
             <div class="container">
                 <div class="row justify-content-center">
+                    <div class="col-lg-3">
+                        <div class="card">
+                            <div class="card-head text-center">
+                                Showing Invoice Owners : <select class="form-control" onchange="showOwnerBuildings(this.value)">
+                                    <option>All</option>
+                                    {% for i in owners %}
+                                        <option>{{i.name}}</option>
+                                    {% endfor %}
+                                </select>
+                                <script>
+                                    function showOwnerBuildings(a){
+                                        count = 0;
+                                        if (a == "All"){
+                                            ob = document.getElementsByClassName("abcd");
+                                            for (i=0 ; i <ob.length ; i++){
+                                                ob[i].hidden = false;
+                                            }
+                                        }
+                                        else{
+                                            ob = document.getElementsByClassName("abcd");
+                                            for (i=0 ; i <ob.length ; i++){
+                                                if (ob[i].getAttribute("class") == "abcd "+a){
+                                                    count++;
+                                                    ob[i].hidden = false;
+                                                }
+                                                else{
+                                                    ob[i].hidden = true;
+                                                }
+                                            }
+                                            if (count == 0){
+                                                alert("The selected owner does not have any buildings!");
+                                            }
+                                        }
+                                    }
+                                </script>
+                            </div>
+                        </div>
+                    </div>
                     <div class="col-lg-6">
                         <div class="card">
                             <div class="card-head text-center">
@@ -22,9 +60,14 @@
                             <div class="card-body">
                                 {% if objs %}
                                     {% for i in objs %}
-                                        <a href="{% url 'apartments' i.id %}">
-                                            Building : {{i.name}}  -  Invoice Owner : {{i.invoice_owner}}
-                                        </a><br><hr><br>
+                                        <div class="abcd {{i.owner}}">
+                                            {% if request.user.is_superuser %}
+                                                <a href="{% url 'delete-building' i.id %}" title="Delete"><span class="fa text-danger fa-lg fa-remove"></span></a>
+                                            {% endif %}
+                                            <a href="{% url 'apartments' i.id %}">
+                                                Building : {{i.name}}  -  Invoice Owner : {{i.owner}}
+                                            </a><br><hr><br>
+                                        </div>
                                     {% endfor %}
                                 {% else %}
                                     <a>You Have No Buildings To Manage Right Now.</a>
