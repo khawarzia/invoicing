@@ -197,6 +197,7 @@ def invoice_form(request,id):
                 obj = invoice()
                 obj.user = request.user
                 obj.apartment = apartment.objects.get(pk=id)
+                obj.owner = apartment.objects.get(pk=id).building.owner
                 obj.amount = request.POST['amount']
                 if request.POST['ramount']:
                     obj.remaining_amount = request.POST['ramount']
@@ -253,13 +254,13 @@ def print_invoice(request,id):
         else:
             p.drawString(433, 447.5, "X")
             p.drawString(80, 447.5, "{}".format(obj[0].transfer_date.strftime("%d-%m-%Y")))
-            p.drawString(225, 447.5, obj[0].bank_of_transfer)
+            p.drawString(225, 447.5, get_display(arabic_reshaper.reshape(obj[0].bank_of_transfer)))
 
         p.drawString(360, 418, "{}".format(obj[0].apartment.type_of))
 
         p.drawString(295, 418, "{}".format(obj[0].apartment.aprt_number))
 
-        p.drawString(98, 418, "{}".format(obj[0].apartment.building.name))
+        p.drawString(98, 418, "{}".format(get_display(arabic_reshaper.reshape(obj[0].apartment.building.name))))
 
         p.drawString(370, 393, "{}".format(obj[0].from_date.strftime("%d-%m-%Y")))
 
@@ -311,17 +312,17 @@ def owner_invoices(request,id):
             context["order"] = request.POST['asc_desc']
             if request.POST["asc_desc"] == "0":
                 if id != "x":
-                    objs = invoice.objects.filter(apartment__building__owner__id=int(id)).order_by("today_date")
+                    objs = invoice.objects.filter(owner__id=int(id)).order_by("today_date")
                 else:
                     objs = invoice.objects.all().order_by("today_date")
             else:
                 if id != "x":
-                    objs = invoice.objects.filter(apartment__building__owner__id=int(id)).order_by("-today_date")
+                    objs = invoice.objects.filter(owner__id=int(id)).order_by("-today_date")
                 else:
                     objs = invoice.objects.all().order_by("-today_date")
         else:
             if id != "x":
-                objs = invoice.objects.filter(apartment__building__owner__id=int(id))
+                objs = invoice.objects.filter(owner__id=int(id))
             else:
                 objs = invoice.objects.all()
 

@@ -1,4 +1,5 @@
 from datetime import date
+from operator import mod
 from statistics import mode
 from django.db import models
 from django.contrib.auth.models import User
@@ -50,7 +51,8 @@ class apartment(models.Model):
 
 class invoice(models.Model):
     user = models.ForeignKey(User,on_delete=models.SET_NULL,null=True,blank=True)
-    apartment = models.ForeignKey(apartment,on_delete=models.CASCADE)
+    apartment = models.ForeignKey(apartment,on_delete=models.SET_NULL,null=True,blank=True)
+    owner = models.ForeignKey(invoice_owner,on_delete=models.CASCADE)
     amount = models.IntegerField(default=0)
     payment_method = models.CharField(max_length=100,null=True,blank=True)
     bank_of_transfer = models.CharField(max_length=300,null=True,blank=True)
