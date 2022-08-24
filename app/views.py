@@ -10,6 +10,7 @@ from PyPDF2 import PdfFileWriter, PdfFileReader
 import arabic_reshaper
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
+from bidi.algorithm import get_display
 
 def login(request):
     if request.user.is_authenticated:
@@ -192,18 +193,23 @@ def invoice_form(request,id):
         template = "new_invoice_form.html"
         context = {'id':id}
         if request.method == "POST":
-            if request.POST['amount'] and request.POST['ramount'] and (request.POST['payment'] == "Cash" or (request.POST['payment'] == "Transfer" and request.POST['bank'] and request.POST['trans_date'])) and request.POST['fdate'] and request.POST['tdate']:
+            if request.POST['amount'] and (request.POST['payment'] == "Cash" or (request.POST['payment'] == "Transfer" and request.POST['bank'] and request.POST['trans_date'])) and request.POST['fdate'] and request.POST['tdate']:
                 obj = invoice()
                 obj.user = request.user
                 obj.apartment = apartment.objects.get(pk=id)
                 obj.amount = request.POST['amount']
-                obj.remaining_amount = request.POST['ramount']
+                if request.POST['ramount']:
+                    obj.remaining_amount = request.POST['ramount']
+                else:
+                    obj.remaining_amount = 0
                 obj.payment_method = request.POST['payment']
                 if (request.POST['payment'] == "Transfer"):
                     obj.bank_of_transfer = request.POST['bank']
                     obj.transfer_date = request.POST['trans_date']
                 obj.from_date = request.POST['fdate']
                 obj.to_date = request.POST['tdate']
+                if request.POST['note']:
+                    obj.note = request.POST['note']
                 obj.save()
                 return redirect("/invoices/{}".format(id))
             else:
@@ -232,14 +238,13 @@ def print_invoice(request,id):
     p.setFont('Arabic', 15)
     
     if (len(obj) == 1):
-
         p.drawString(225, 660, "{}".format(obj[0].today_date.strftime("%d-%m-%Y")))
 
         p.drawString(250, 630, "{:05d}".format(id))
 
         p.drawString(320, 512, "{}".format(obj[0].amount))
 
-        p.drawString(120, 536, get_reversed(arabic_reshaper.reshape(obj[0].apartment.name)) )
+        p.drawString(120, 536, get_display(arabic_reshaper.reshape(obj[0].apartment.name)) )
 
         p.drawString(120, 482, obj[0].apartment.contract_number)
 
@@ -260,7 +265,13 @@ def print_invoice(request,id):
 
         p.drawString(80, 393, "{}".format(obj[0].to_date.strftime("%d-%m-%Y")))
 
-        p.drawString(380, 190, obj[0].apartment.building.owner.name)
+        p.drawString(380, 190, obj[0].user.username)
+
+        p.drawString(65,333, "{} {} : Remaining Amount".format(get_display(arabic_reshaper.reshape("ريال فقط لاغير")),obj[0].remaining_amount))
+
+        p.setFont('Arabic', 13)
+
+        p.drawString(65,305, get_display(arabic_reshaper.reshape(obj[0].note)))
 
     p.showPage()
     p.save()
@@ -269,7 +280,7 @@ def print_invoice(request,id):
 
     new_pdf = PdfFileReader(buffer)
 
-    existing_pdf = PdfFileReader("RealEstateInvoicePDF.pdf")
+    existing_pdf = PdfFileReader("RealEstateInvoiceCom.pdf")
     output = PdfFileWriter()
 
     page = existing_pdf.getPage(0)
@@ -279,7 +290,6 @@ def print_invoice(request,id):
     outputStream = io.BytesIO()
     output.write(outputStream)
     outputStream.seek(0)
-    #outputStream.close()
 
     return FileResponse(outputStream , as_attachment=True, filename='invoice.pdf')
 
@@ -289,3 +299,34 @@ def delete_invoice(request,id):
     tempId = obj.apartment.id
     obj.delete()
     return redirect("/invoices/{}".format(tempId))
+
+@login_required(login_url='/')
+def owner_invoices(request,id):
+    if id:
+        template = "owners_invoice.html"
+        context = {}
+        if id != "x":
+            context['sel_owner'] = int(id)
+        if request.method == "POST" and request.POST['asc_desc'] in ("0","1"):
+            context["order"] = request.POST['asc_desc']
+            if request.POST["asc_desc"] == "0":
+                if id != "x":
+                    objs = invoice.objects.filter(apartment__building__owner__id=int(id)).order_by("today_date")
+                else:
+                    objs = invoice.objects.all().order_by("today_date")
+            else:
+                if id != "x":
+                    objs = invoice.objects.filter(apartment__building__owner__id=int(id)).order_by("-today_date")
+                else:
+                    objs = invoice.objects.all().order_by("-today_date")
+        else:
+            if id != "x":
+                objs = invoice.objects.filter(apartment__building__owner__id=int(id))
+            else:
+                objs = invoice.objects.all()
+
+        context['objs'] = objs
+        context['owners'] = invoice_owner.objects.all()
+        return render(request,template,context)
+    else:
+        return redirect('/home')

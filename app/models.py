@@ -59,6 +59,7 @@ class invoice(models.Model):
     to_date = models.DateField(null=True,blank=True)
     today_date = models.DateField(auto_now_add=True)
     remaining_amount = models.IntegerField(default=0)
+    note = models.TextField(max_length=2000,null=True,blank=True)
 
     def __str__(self):
         return self.apartment.building.name + " - " + self.apartment.aprt_number + " - {}".format(self.unique_id)

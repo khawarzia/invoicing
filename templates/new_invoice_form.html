@@ -52,7 +52,7 @@
                                 {% endif %}
                                 <form method="post">{% csrf_token %}
                                     <input type="number" class="form-control" required name="amount" placeholder="Enter The Amount"><br>
-                                    <input type="number" class="form-control" required name="ramount" placeholder="Enter The Remaining Amount"><br>
+                                    <input type="number" class="form-control" name="ramount" placeholder="Enter The Remaining Amount"><br>
                                     <select name="payment" class="form-control" required onchange="changeFormBasedOnOption(this.value)">
                                         <option value="" disabled selected>Select Payment Option</option>
                                         <option>Cash</option>
@@ -65,6 +65,8 @@
                                     <input type="date" class="form-control" required name="fdate" placeholder="Enter From Date"><br>
                                     <label>To Date</label><br>
                                     <input type="date" class="form-control" required name="tdate" placeholder="Enter To Date"><br>
+                                    <label>Comments</label>
+                                    <textarea class="form-control" name="note"></textarea><br>
                                     <button class="btn btn-primary text-center" type="submit">
                                         Add
                                     </button>

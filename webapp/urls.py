@@ -37,4 +37,6 @@ urlpatterns = [
 
     path("print-invoice/<int:id>",views.print_invoice,name="print-invoice"),
     path("delete-invoice/<int:id>",views.delete_invoice,name="delete-invoice"),
+
+    path("owner-invoices/<str:id>",views.owner_invoices,name="owner-invoices"),
 ]

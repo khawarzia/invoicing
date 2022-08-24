@@ -14,39 +14,21 @@
             <br><br>
             <div class="container">
                 <div class="row justify-content-center">
-                    <div class="col-lg-3">
+                    <div class="col-lg-2">
                         <div class="card">
                             <div class="card-head text-center">
-                                Showing Invoice Owners : <select class="form-control" onchange="showOwnerBuildings(this.value)">
-                                    <option>All</option>
+                                Showing Invoice Owners : <select class="form-control" id="owners-invoice">
+                                    <option value="x">All</option>
                                     {% for i in owners %}
-                                        <option>{{i.name}}</option>
+                                        <option value="{{i.id}}">{{i.name}}</option>
                                     {% endfor %}
-                                </select>
+                                </select><br>
+                                <button class="btn btn-primary" onclick="redirectToInvoices();">
+                                    Show Invoices
+                                </button><br>
                                 <script>
-                                    function showOwnerBuildings(a){
-                                        count = 0;
-                                        if (a == "All"){
-                                            ob = document.getElementsByClassName("abcd");
-                                            for (i=0 ; i <ob.length ; i++){
-                                                ob[i].hidden = false;
-                                            }
-                                        }
-                                        else{
-                                            ob = document.getElementsByClassName("abcd");
-                                            for (i=0 ; i <ob.length ; i++){
-                                                if (ob[i].getAttribute("class") == "abcd "+a){
-                                                    count++;
-                                                    ob[i].hidden = false;
-                                                }
-                                                else{
-                                                    ob[i].hidden = true;
-                                                }
-                                            }
-                                            if (count == 0){
-                                                alert("The selected owner does not have any buildings!");
-                                            }
-                                        }
+                                    function redirectToInvoices(){
+                                        window.location.href = "/owner-invoices/"+document.getElementById("owners-invoice").value;
                                     }
                                 </script>
                             </div>
