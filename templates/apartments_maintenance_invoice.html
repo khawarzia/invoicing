@@ -2,7 +2,7 @@
     <html lang="en">
 
         <head>
-            <title>Building Management - Invoices</title>
+            <title>Building Management - Maintenance Invoices</title>
             <meta charset="utf-8">
             <meta name="viewport" content="width=device-width, initial-scale=1">
             <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css">
@@ -71,38 +71,38 @@
                                 {% if objs %}
                                     <table class="table">
                                         <tr>
-                                            <td>Remain</td>
-                                            <td>To</td>
-                                            <td>From</td>
-                                            <td>Issued Date</td>
-                                            <td>Invoice Number</td>
+                                            <td>Date</td>
                                             <td>Amount</td>
+                                            <td>Building Name</td>
+                                            <td>Apt Number</td>
+                                            <td>Description</td>
+                                            <td>Issued By</td>
                                             <td>Actions</td>
                                         </tr>
                                         {% for i in objs %}
                                             <tr>
-                                                <td>{{i.remaining_amount}}</td>
-                                                <td>{{i.to_date | date:'d-m-y'}}</td>
-                                                <td>{{i.from_date | date:'d-m-y'}}</td>
                                                 <td>{{i.today_date | date:'d-m-y'}}</td>
-                                                <td>{{i.id}}</td>
                                                 <td>{{i.amount}}</td>
-                                                <td><a href="{% url 'print-invoice' i.id %}" target="_blank">Print</a>&ensp; {% if request.user.is_superuser %}
-                                                    <a href="{% url 'delete-invoice' i.id %}" title="Delete"><span class="fa text-danger fa-lg fa-remove"></span></a>
+                                                <td>{{i.apartment.building.name}}</td>
+                                                <td>{{i.apartment.aprt_number}}</td>
+                                                <td>{{i.note}}</td>
+                                                <td>{{i.user.username}}</td>
+                                                <td>{% if request.user.is_superuser %}
+                                                    <a href="{% url 'delete-maintenance-invoice' i.id %}" title="Delete"><span class="fa text-danger fa-lg fa-remove"></span></a>
                                                 {% endif %}</td>
                                             </tr>
                                         {% endfor %}
                                     </table>
                                 {% else %}
-                                    <a>This Apartments Has No Invoices Right Now.</a>
+                                    <a>This Apartments Has No Maintenance Invoices Right Now.</a>
                                 {% endif %}
                             </div>
                             <div class="card-footer">
                                 <div class="row justify-content-around">
                                     <div class="col-lg-8">
                                         {% if type_of_user %}
-                                            <button class="btn btn-primary" type="button" onclick="window.location.href='/new-invoice-form/{{aobj.id}}'">
-                                                Add New Invoice For This Apartment
+                                            <button class="btn btn-primary" type="button" onclick="window.location.href='/new-maintenance-invoice-form/{{aobj.id}}'">
+                                                Add New Maintenance Invoice For This Apartment
                                             </button>    
                                         {% endif %}
                                     </div>

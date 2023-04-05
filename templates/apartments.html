@@ -27,16 +27,19 @@
                                     </div>
                                 {% endif %}
                                 <form method="post">{% csrf_token %}
-                                    <input type="text" class="form-control" required name="name" placeholder="Enter The Name Of Building" value="{{bobj.name}}"><br>
-                                    <select class="form-control" required name="invoice-owner">
+                                    <input type="text" class="form-control" required name="name" placeholder="Enter The Name Of Building" value="{{bobj.name}}"
+                                    {% if not type_of_user %}readonly{% endif %} ><br>
+                                    <select class="form-control" required name="invoice-owner" {% if not type_of_user %}readonly{% endif %}>
                                         <option value="" disabled>-Select Invoice Owner-</option>
                                         {% for i in owners %}
                                             <option value="{{i.id}}" {% if bobj.owner.id == i.id %} selected {% endif %} >{{i.name}}</option>
                                         {% endfor %}
                                     </select><br>
-                                    <button class="btn btn-primary text-center" type="submit">
-                                        Save Changes
-                                    </button>
+                                    {% if type_of_user %}
+                                        <button class="btn btn-primary text-center" type="submit">
+                                            Save Changes
+                                        </button>
+                                    {% endif %}
                                 </form>
                             </div>
                             <div class="card-footer">
@@ -87,10 +90,17 @@
                                     {% for i in objs %}
                                     <div class="row abcd {{i.getShowColor}}">
                                         <div class="col-lg-10">
-                                            <a href="{% url 'delete-apartment' i.id %}" title="Delete"><span class="fa text-danger fa-lg fa-remove"></span></a>
-                                                <a href="{% url 'invoices' i.id %}">
-                                                    Apartment : {{i.aprt_number}}  -  {{i.name}}
+                                            {% if type_of_user %}
+                                                <a href="{% url 'delete-apartment' i.id %}" title="Delete">
+                                                    <span class="fa text-danger fa-lg fa-remove"></span>
                                                 </a>
+                                            {% endif %}
+                                            <a href="{% url 'invoices' i.id %}">
+                                                Apartment : {{i.aprt_number}}  -  {{i.name}}
+                                            </a>&ensp;-&ensp;
+                                            <a href="{% url 'maintenance-invoices' i.id %}">
+                                                Maintenance Invoices
+                                            </a>
                                         </div>
                                         <div class="col-lg-1" style="background-color: {{i.getShowColor}} ; padding: 10px; border: 1px solid white;">
 
@@ -108,9 +118,11 @@
                             <div class="card-footer">
                                 <div class="row justify-content-around">
                                     <div class="col-lg-8">
-                                        <button class="btn btn-primary" type="button" onclick="window.location.href='/new-apartment-form/{{bobj.id}}'">
-                                            Add New Apartment To This Building
-                                        </button>    
+                                        {% if type_of_user %}
+                                            <button class="btn btn-primary" type="button" onclick="window.location.href='/new-apartment-form/{{bobj.id}}'">
+                                                Add New Apartment To This Building
+                                            </button>    
+                                        {% endif %}
                                     </div>
                                     {% if request.user.is_superuser %}
                                         <div class="col-lg-2">

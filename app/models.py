@@ -1,14 +1,25 @@
 from datetime import date
-from operator import mod
-from statistics import mode
 from django.db import models
 from django.contrib.auth.models import User
+
+type_of_user_choices = (
+    ('d','Default'),
+    ('v','View Only')
+)
 
 class invoice_owner(models.Model):
     name = models.CharField(max_length=300,null=True,blank=True)
 
     def __str__(self):
         return self.name
+
+class user_profile(models.Model):
+    user = models.ForeignKey(User,on_delete=models.CASCADE)
+    type_of_user = models.CharField(max_length=20,choices=type_of_user_choices,default='d')
+    invoice_owner_allowed = models.ManyToManyField(invoice_owner,blank=True)
+
+    def __str__(self):
+        return "Profile for user - {}".format(self.user.username)
     
 class building(models.Model):
     name = models.CharField(max_length=300,null=True,blank=True)
@@ -61,6 +72,17 @@ class invoice(models.Model):
     to_date = models.DateField(null=True,blank=True)
     today_date = models.DateField(auto_now_add=True)
     remaining_amount = models.IntegerField(default=0)
+    note = models.TextField(max_length=2000,null=True,blank=True)
+
+    def __str__(self):
+        return self.apartment.building.name + " - " + self.apartment.aprt_number + " - {}".format(self.unique_id)
+
+class maintenance_invoice(models.Model):
+    user = models.ForeignKey(User,on_delete=models.SET_NULL,null=True,blank=True)
+    apartment = models.ForeignKey(apartment,on_delete=models.SET_NULL,null=True,blank=True)
+    owner = models.ForeignKey(invoice_owner,on_delete=models.CASCADE)
+    amount = models.IntegerField(default=0)
+    today_date = models.DateField(auto_now_add=True)
     note = models.TextField(max_length=2000,null=True,blank=True)
 
     def __str__(self):

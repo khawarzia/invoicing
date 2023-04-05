@@ -12,6 +12,15 @@ from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 from bidi.algorithm import get_display
 
+def get_user_profile(userobj):
+    try:
+        obj = user_profile.objects.get(user=userobj)
+    except:
+        obj = user_profile()
+        obj.user = userobj
+        obj.save()
+    return obj
+
 def login(request):
     if request.user.is_authenticated:
         return redirect("/home")
@@ -38,8 +47,24 @@ def logout(request):
 def home(request):
     template = "home.html"
     context = {}
-    context['objs'] = building.objects.all()
-    context['owners'] = invoice_owner.objects.all()
+    obj = get_user_profile(request.user)
+    context['type_of_user'] = obj.type_of_user == 'd'
+    if obj.type_of_user == 'v':
+        temp = building.objects.all()
+        temp2 = invoice_owner.objects.all()
+        temp_list = []
+        temp2_list = []
+        for i in temp:
+            if i.owner in obj.invoice_owner_allowed.all():
+                temp_list.append(i)
+        for i in temp2:
+            if i in obj.invoice_owner_allowed.all():
+                temp2_list.append(i)
+        context['objs'] = temp_list
+        context['owners'] = temp2_list
+    else:
+        context['objs'] = building.objects.all()
+        context['owners'] = invoice_owner.objects.all()
     return render(request,template,context)
 
 @login_required(login_url='/')
@@ -73,11 +98,21 @@ def apartments(request,id):
     if id:
         template = "apartments.html"
         context = {}
+        obj = get_user_profile(request.user)
+        context['type_of_user'] = obj.type_of_user == 'd'
         building_obj = building.objects.get(pk=id)
         objs = apartment.objects.filter(building=building_obj)
         context['bobj'] = building_obj
         context['objs'] = objs
-        context['owners'] = invoice_owner.objects.all()
+        if context['type_of_user']:
+            context['owners'] = invoice_owner.objects.all()
+        else:
+            temp2 = invoice_owner.objects.all()
+            temp2_list = []
+            for i in temp2:
+                if i in obj.invoice_owner_allowed.all():
+                    temp2_list.append(i)
+            context['owners'] = temp2_list
         if request.method == "POST":
             if request.POST['name'] and request.POST['invoice-owner']:
                 objs = building.objects.filter(name=request.POST['name'])
@@ -171,6 +206,8 @@ def invoices(request,id):
     if id:
         template = "apartments_invoice.html"
         context = {}
+        obj = get_user_profile(request.user)
+        context['type_of_user'] = obj.type_of_user == 'd'
         aobj = apartment.objects.get(pk=id)
         if request.method == "POST" and request.POST['asc_desc'] in ("0","1"):
             context["order"] = request.POST['asc_desc']
@@ -306,6 +343,8 @@ def owner_invoices(request,id):
     if id:
         template = "owners_invoice.html"
         context = {}
+        obj = get_user_profile(request.user)
+        context['type_of_user'] = obj.type_of_user == 'd'
         if id != "x":
             context['sel_owner'] = int(id)
         if request.method == "POST" and request.POST['asc_desc'] in ("0","1"):
@@ -314,20 +353,170 @@ def owner_invoices(request,id):
                 if id != "x":
                     objs = invoice.objects.filter(owner__id=int(id)).order_by("today_date")
                 else:
-                    objs = invoice.objects.all().order_by("today_date")
+                    if obj.type_of_user == 'v':
+                        temp2 = invoice.objects.all().order_by("today_date")
+                        objs = []
+                        for i in temp2:
+                            if i.owner in obj.invoice_owner_allowed.all():
+                                objs.append(i)
+                    else:
+                        objs = invoice.objects.all().order_by("today_date")
             else:
                 if id != "x":
                     objs = invoice.objects.filter(owner__id=int(id)).order_by("-today_date")
                 else:
-                    objs = invoice.objects.all().order_by("-today_date")
+                    if obj.type_of_user == 'v':
+                        temp2 = invoice.objects.all().order_by("-today_date")
+                        objs = []
+                        for i in temp2:
+                            if i.owner in obj.invoice_owner_allowed.all():
+                                objs.append(i)
+                    else:
+                        objs = invoice.objects.all().order_by("-today_date")
         else:
             if id != "x":
                 objs = invoice.objects.filter(owner__id=int(id))
             else:
-                objs = invoice.objects.all()
+                if obj.type_of_user == 'v':
+                    temp2 = invoice.objects.all()
+                    objs = []
+                    for i in temp2:
+                        if i.owner in obj.invoice_owner_allowed.all():
+                            objs.append(i)
+                else:
+                    objs = invoice.objects.all()
 
         context['objs'] = objs
-        context['owners'] = invoice_owner.objects.all()
+        if obj.type_of_user == 'v':
+            temp2 = invoice_owner.objects.all()
+            temp2_list = []
+            for i in temp2:
+                if i in obj.invoice_owner_allowed.all():
+                    temp2_list.append(i)
+            context['owners'] = temp2_list
+        else:
+            context['owners'] = invoice_owner.objects.all()
         return render(request,template,context)
     else:
         return redirect('/home')
+    
+
+
+
+@login_required(login_url='/')
+def maintenance_invoices(request,id):
+    if id:
+        template = "apartments_maintenance_invoice.html"
+        context = {}
+        obj = get_user_profile(request.user)
+        context['type_of_user'] = obj.type_of_user == 'd'
+        aobj = apartment.objects.get(pk=id)
+        if request.method == "POST" and request.POST['asc_desc'] in ("0","1"):
+            context["order"] = request.POST['asc_desc']
+            if request.POST["asc_desc"] == "0":
+                objs = maintenance_invoice.objects.filter(apartment=aobj).order_by("today_date")
+            else:
+                objs = maintenance_invoice.objects.filter(apartment=aobj).order_by("-today_date")
+        else:
+            objs = maintenance_invoice.objects.filter(apartment=aobj)
+        context['aobj'] = aobj
+        context['date_dis'] = aobj.dob.strftime("%Y-%m-%d")
+        context['objs'] = objs
+        return render(request,template,context)
+    else:
+        return redirect('/home')
+
+@login_required(login_url='/')
+def maintenance_invoice_form(request,id):
+    if id:
+        template = "new_maintenance_invoice_form.html"
+        context = {'id':id}
+        if request.method == "POST":
+            if request.POST['amount']:
+                obj = maintenance_invoice()
+                obj.user = request.user
+                obj.apartment = apartment.objects.get(pk=id)
+                obj.owner = apartment.objects.get(pk=id).building.owner
+                obj.amount = request.POST['amount']
+                if request.POST['note']:
+                    obj.note = request.POST['note']
+                obj.save()
+                return redirect("/maintenance-invoices/{}".format(id))
+            else:
+                context['message'] = "Entered data is not valid."
+        return render(request,template,context)
+    else:
+        return redirect("/home")
+    
+@login_required(login_url='/')
+def delete_maintenance_invoice(request,id):
+    obj = maintenance_invoice.objects.get(pk=id)
+    tempId = obj.apartment.id
+    obj.delete()
+    return redirect("/maintenance-invoices/{}".format(tempId))
+
+@login_required(login_url='/')
+def owner_maintenance_invoices(request,id):
+    if id:
+        template = "owners_maintenance_invoice.html"
+        context = {}
+        obj = get_user_profile(request.user)
+        context['type_of_user'] = obj.type_of_user == 'd'
+        if id != "x":
+            context['sel_owner'] = int(id)
+        if request.method == "POST" and request.POST['asc_desc'] in ("0","1"):
+            context["order"] = request.POST['asc_desc']
+            if request.POST["asc_desc"] == "0":
+                if id != "x":
+                    objs = invoice.objects.filter(owner__id=int(id)).order_by("today_date")
+                else:
+                    if obj.type_of_user == 'v':
+                        temp2 = invoice.objects.all().order_by("today_date")
+                        objs = []
+                        for i in temp2:
+                            if i.owner in obj.invoice_owner_allowed.all():
+                                objs.append(i)
+                    else:
+                        objs = invoice.objects.all().order_by("today_date")
+            else:
+                if id != "x":
+                    objs = invoice.objects.filter(owner__id=int(id)).order_by("-today_date")
+                else:
+                    if obj.type_of_user == 'v':
+                        temp2 = invoice.objects.all().order_by("-today_date")
+                        objs = []
+                        for i in temp2:
+                            if i.owner in obj.invoice_owner_allowed.all():
+                                objs.append(i)
+                    else:
+                        objs = invoice.objects.all().order_by("-today_date")
+        else:
+            if id != "x":
+                objs = invoice.objects.filter(owner__id=int(id))
+            else:
+                if obj.type_of_user == 'v':
+                    temp2 = invoice.objects.all()
+                    objs = []
+                    for i in temp2:
+                        if i.owner in obj.invoice_owner_allowed.all():
+                            objs.append(i)
+                else:
+                    objs = invoice.objects.all()
+
+        context['objs'] = objs
+        if obj.type_of_user == 'v':
+            temp2 = invoice_owner.objects.all()
+            temp2_list = []
+            for i in temp2:
+                if i in obj.invoice_owner_allowed.all():
+                    temp2_list.append(i)
+            context['owners'] = temp2_list
+        else:
+            context['owners'] = invoice_owner.objects.all()
+        return render(request,template,context)
+    else:
+        return redirect('/home')
+    
+
+def owner_report(request,id):
+    return FileResponse(open("Monthly_report.xlsx","rb"), as_attachment=True)

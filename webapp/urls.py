@@ -39,4 +39,12 @@ urlpatterns = [
     path("delete-invoice/<int:id>",views.delete_invoice,name="delete-invoice"),
 
     path("owner-invoices/<str:id>",views.owner_invoices,name="owner-invoices"),
+
+    path("maintenance-invoices/<int:id>",views.maintenance_invoices,name="maintenance-invoices"),
+    path("new-maintenance-invoice-form/<int:id>",views.maintenance_invoice_form,name="maintenance-invoice-form"),
+    path("delete-maintenance-invoice/<int:id>",views.delete_maintenance_invoice,name="delete-maintenance-invoice"),
+    path("owner-maintenance-invoices/<str:id>",views.owner_maintenance_invoices,name="owner-maintenance-invoices"),
+
+    path("owner-report/<str:id>",views.owner_report,name="owner-report"),
+
 ]

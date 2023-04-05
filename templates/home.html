@@ -17,7 +17,7 @@
                     <div class="col-lg-2">
                         <div class="card">
                             <div class="card-head text-center">
-                                Showing Invoice Owners : <select class="form-control" id="owners-invoice">
+                                Showing Invoice Owners : <select class="form-control" id="owners-invoice" onchange="show_download_report_button();">
                                     <option value="x">All</option>
                                     {% for i in owners %}
                                         <option value="{{i.id}}">{{i.name}}</option>
@@ -25,10 +25,24 @@
                                 </select><br>
                                 <button class="btn btn-primary" onclick="redirectToInvoices();">
                                     Show Invoices
-                                </button><br>
+                                </button><br><br>
+                                <button class="btn btn-primary" onclick="redirectToReports();" id="show-report-btn" style="display: none;">
+                                    Show Report
+                                </button><br><br>
                                 <script>
                                     function redirectToInvoices(){
                                         window.location.href = "/owner-invoices/"+document.getElementById("owners-invoice").value;
+                                    }
+                                    function redirectToReports(){
+                                        window.location.href = "/owner-report/"+document.getElementById("owners-invoice").value;
+                                    }
+                                    function show_download_report_button(){
+                                        if (document.getElementById("owners-invoice").value != 'x'){
+                                            document.getElementById('show-report-btn').style = "";
+                                        }
+                                        else{
+                                            document.getElementById('show-report-btn').style = "display:none;";
+                                        }
                                     }
                                 </script>
                             </div>
@@ -43,8 +57,10 @@
                                 {% if objs %}
                                     {% for i in objs %}
                                         <div class="abcd {{i.owner}}">
-                                            {% if request.user.is_superuser %}
-                                                <a href="{% url 'delete-building' i.id %}" title="Delete"><span class="fa text-danger fa-lg fa-remove"></span></a>
+                                            {% if type_of_user %}
+                                                {% if request.user.is_superuser %}
+                                                    <a href="{% url 'delete-building' i.id %}" title="Delete"><span class="fa text-danger fa-lg fa-remove"></span></a>
+                                                {% endif %}
                                             {% endif %}
                                             <a href="{% url 'apartments' i.id %}">
                                                 Building : {{i.name}}  -  Invoice Owner : {{i.owner}}
@@ -58,9 +74,11 @@
                             <div class="card-footer">
                                 <div class="row justify-content-around">
                                     <div class="col-lg-8">
-                                        <button class="btn btn-primary" type="button" onclick="window.location.href='/new-building-form'">
-                                            Add New Building
-                                        </button>    
+                                        {% if type_of_user %}
+                                            <button class="btn btn-primary" type="button" onclick="window.location.href='/new-building-form'">
+                                                Add New Building
+                                            </button>    
+                                        {% endif %}
                                     </div>
                                     {% if request.user.is_superuser %}
                                         <div class="col-lg-2">
