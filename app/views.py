@@ -11,6 +11,8 @@ import arabic_reshaper
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 from bidi.algorithm import get_display
+import openpyxl
+import datetime
 
 def get_user_profile(userobj):
     try:
@@ -334,9 +336,13 @@ def print_invoice(request,id):
 @login_required(login_url='/')
 def delete_invoice(request,id):
     obj = invoice.objects.get(pk=id)
-    tempId = obj.apartment.id
-    obj.delete()
-    return redirect("/invoices/{}".format(tempId))
+    try:
+        tempId = obj.apartment.id
+        obj.delete()
+        return redirect("/invoices/{}".format(tempId))
+    except:
+        obj.delete()
+        return redirect('/home')
 
 @login_required(login_url='/')
 def owner_invoices(request,id):
@@ -451,9 +457,13 @@ def maintenance_invoice_form(request,id):
 @login_required(login_url='/')
 def delete_maintenance_invoice(request,id):
     obj = maintenance_invoice.objects.get(pk=id)
-    tempId = obj.apartment.id
-    obj.delete()
-    return redirect("/maintenance-invoices/{}".format(tempId))
+    try:
+        tempId = obj.apartment.id
+        obj.delete()
+        return redirect("/invoices/{}".format(tempId))
+    except:
+        obj.delete()
+        return redirect('/home')
 
 @login_required(login_url='/')
 def owner_maintenance_invoices(request,id):
@@ -516,7 +526,69 @@ def owner_maintenance_invoices(request,id):
         return render(request,template,context)
     else:
         return redirect('/home')
-    
 
 def owner_report(request,id):
+    date_col_rows = [{'row_start':4,'row_end':19,'col_start':10,'col_end':16},{'row_start':4,'row_end':19,'col_start':2,'col_end':8}]
+    date_col_rows_inv = [{'row_start':4,'row_end':19,'col_start':10,'col_end':14},{'row_start':4,'row_end':19,'col_start':2,'col_end':6}]
+    date_col_rows_main = [{'row_start':4,'row_end':19,'col_start':15,'col_end':16},{'row_start':4,'row_end':19,'col_start':7,'col_end':8}]
+    row_offset = 21
+    workbook = openpyxl.load_workbook('Monthly_report.xlsx')
+    worksheet = workbook.get_sheet_by_name(workbook.get_sheet_names()[0])
+
+    sel_date = datetime.datetime.now()
+
+    owner_obj = invoice_owner.objects.get(pk=id)
+    invoice_objs = invoice.objects.filter(owner=owner_obj,today_date__month=sel_date.month,today_date__year=sel_date.year).order_by("today_date")
+    maintenance_objs = maintenance_invoice.objects.filter(owner=owner_obj,today_date__month=sel_date.month,today_date__year=sel_date.year).order_by("today_date")
+
+    offset = 0
+    for i in range(1,32):
+        limits = date_col_rows[i%2]
+        for r in range(limits['row_start']+offset,limits['row_end']+1+offset):
+            for c in range(limits['col_start'],limits['col_end']+1):
+                cell = worksheet.cell(row=r,column=c)
+                cell.value = ""
+        
+        inv_data = []
+        for j in invoice_objs:
+            if j.today_date.day == i:
+                inv_data.append(j)
+
+        limits = date_col_rows_inv[i%2]
+        for j,r in zip(inv_data,range(limits['row_start']+offset,limits['row_end']+1+offset)):
+            cell = worksheet.cell(row=r,column=limits['col_start'])
+            cell.value = j.apartment.aprt_number
+            cell = worksheet.cell(row=r,column=limits['col_start']+1)
+            cell.value = j.apartment.building.name
+            if j.payment_method == 'Cash':
+                cell = worksheet.cell(row=r,column=limits['col_start']+2)
+                cell.value = j.amount
+            else:
+                cell = worksheet.cell(row=r,column=limits['col_start']+3)
+                cell.value = j.amount
+            cell = worksheet.cell(row=r,column=limits['col_start']+4)
+            cell.value = j.id
+
+        main_data = []
+        for j in maintenance_objs:
+            if j.today_date.day == i:
+                main_data.append(j)
+
+        limits = date_col_rows_main[i%2]
+        for j,r in zip(main_data,range(limits['row_start']+offset,limits['row_end']+1+offset)):
+            cell = worksheet.cell(row=r,column=limits['col_start'])
+            cell.value = j.amount
+            cell = worksheet.cell(row=r,column=limits['col_start']+1)
+            cell.value = j.note
+
+        
+        if (i % 2 == 0):
+            offset += row_offset
+
+
+
+
+
+    workbook.save('Monthly_report.xlsx')
+
     return FileResponse(open("Monthly_report.xlsx","rb"), as_attachment=True)

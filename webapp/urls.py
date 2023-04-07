@@ -45,6 +45,6 @@ urlpatterns = [
     path("delete-maintenance-invoice/<int:id>",views.delete_maintenance_invoice,name="delete-maintenance-invoice"),
     path("owner-maintenance-invoices/<str:id>",views.owner_maintenance_invoices,name="owner-maintenance-invoices"),
 
-    path("owner-report/<str:id>",views.owner_report,name="owner-report"),
+    path("owner-report/<int:id>",views.owner_report,name="owner-report"),
 
 ]

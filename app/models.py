@@ -75,7 +75,7 @@ class invoice(models.Model):
     note = models.TextField(max_length=2000,null=True,blank=True)
 
     def __str__(self):
-        return self.apartment.building.name + " - " + self.apartment.aprt_number + " - {}".format(self.unique_id)
+        return self.apartment.building.name + " - " + self.apartment.aprt_number + " - {}".format(self.id)
 
 class maintenance_invoice(models.Model):
     user = models.ForeignKey(User,on_delete=models.SET_NULL,null=True,blank=True)
@@ -86,4 +86,4 @@ class maintenance_invoice(models.Model):
     note = models.TextField(max_length=2000,null=True,blank=True)
 
     def __str__(self):
-        return self.apartment.building.name + " - " + self.apartment.aprt_number + " - {}".format(self.unique_id)
+        return self.apartment.building.name + " - " + self.apartment.aprt_number + " - {}".format(self.id)
