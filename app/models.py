@@ -4,7 +4,8 @@ from django.contrib.auth.models import User
 
 type_of_user_choices = (
     ('d','Default'),
-    ('v','View Only')
+    ('v','Read Only'),
+    ('w','Read and Write')
 )
 
 class invoice_owner(models.Model):
@@ -27,6 +28,9 @@ class building(models.Model):
 
     def __str__(self):
         return self.name
+    
+    def apartment_count(self):
+        return (len(apartment.objects.filter(building=self)) == 0)
 
 class apartment(models.Model):
     aprt_number = models.CharField(max_length=50,null=True,blank=True)
@@ -39,8 +43,15 @@ class apartment(models.Model):
     note = models.TextField(max_length=2000,null=True,blank=True)
     building = models.ForeignKey(building,on_delete=models.CASCADE)
 
+    temp_del = models.BooleanField(default=False)
+    temp_del_date = models.DateField(null=True,blank=True)
+
     def __str__(self):
         return self.building.name + " - " + self.aprt_number
+    
+    def getDisplayName(self):
+        aprt_types = {"Apartment":"شقة","Floor":"دور","Home":"غرفة","Store":"محل ","Studio":"ملحق"}
+        return aprt_types[self.type_of]
 
     def getShowColor(self):
         invs = invoice.objects.filter(apartment=self).order_by("today_date")
@@ -74,6 +85,8 @@ class invoice(models.Model):
     remaining_amount = models.IntegerField(default=0)
     note = models.TextField(max_length=2000,null=True,blank=True)
 
+    invoice_number = models.IntegerField(default=0)
+
     def __str__(self):
         return self.apartment.building.name + " - " + self.apartment.aprt_number + " - {}".format(self.id)
 
@@ -85,5 +98,7 @@ class maintenance_invoice(models.Model):
     today_date = models.DateField(auto_now_add=True)
     note = models.TextField(max_length=2000,null=True,blank=True)
 
+    invoice_number = models.IntegerField(default=0)
+    
     def __str__(self):
         return self.apartment.building.name + " - " + self.apartment.aprt_number + " - {}".format(self.id)

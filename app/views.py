@@ -6,7 +6,7 @@ import io
 from django.http import FileResponse
 from reportlab.pdfgen import canvas
 from .models import *
-from PyPDF2 import PdfFileWriter, PdfFileReader
+from PyPDF2 import PdfReader, PdfWriter
 import arabic_reshaper
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
@@ -51,7 +51,7 @@ def home(request):
     context = {}
     obj = get_user_profile(request.user)
     context['type_of_user'] = obj.type_of_user == 'd'
-    if obj.type_of_user == 'v':
+    if obj.type_of_user in ('v','w'):
         temp = building.objects.all()
         temp2 = invoice_owner.objects.all()
         temp_list = []
@@ -103,9 +103,18 @@ def apartments(request,id):
         obj = get_user_profile(request.user)
         context['type_of_user'] = obj.type_of_user == 'd'
         building_obj = building.objects.get(pk=id)
-        objs = apartment.objects.filter(building=building_obj)
+        objs = apartment.objects.filter(building=building_obj,temp_del=False)
+        del_objs = apartment.objects.filter(building=building_obj,temp_del=True)
+        temp_del_objs = []
+        for i in del_objs:
+            day_diff = datetime.date.today() - i.temp_del_date
+            if day_diff.days == 7:
+                i.delete()
+            else:
+                temp_del_objs.append(i)
         context['bobj'] = building_obj
         context['objs'] = objs
+        context['del_objs'] = temp_del_objs
         if context['type_of_user']:
             context['owners'] = invoice_owner.objects.all()
         else:
@@ -169,7 +178,7 @@ def edit_apartment_form(request,id):
         if request.method == "POST":
             if request.POST['name'] and request.POST['num'] and request.POST['phone'] and request.POST['type_of'] and request.POST['dob'] and request.POST['cnum'] and request.POST['enum']:
                 objs = apartment.objects.filter(pk=id)
-                if len(objs) == 1 and len(apartment.objects.filter(building=objs[0].building, aprt_number=request.POST['num'])) == 1:
+                if len(objs) == 1 and len(apartment.objects.filter(building=objs[0].building, aprt_number=request.POST['num'])) == 0:
                     obj = objs[0]
                     obj.aprt_number = request.POST['num']
                     obj.name = request.POST['name']
@@ -197,8 +206,13 @@ def edit_apartment_form(request,id):
 def delete_apartment(request,id):
     if id:
         obj = apartment.objects.filter(pk=id)[0]
+        if obj.temp_del:
+            obj.temp_del = False
+        else:
+            obj.temp_del = True
+            obj.temp_del_date = datetime.date.today()
+        obj.save()
         bid = obj.building.id
-        obj.delete()
         return redirect("/apartments/{}".format(bid))
     else:
         return redirect("/home")
@@ -210,6 +224,7 @@ def invoices(request,id):
         context = {}
         obj = get_user_profile(request.user)
         context['type_of_user'] = obj.type_of_user == 'd'
+        context['write_priv'] = obj.type_of_user == 'w'
         aobj = apartment.objects.get(pk=id)
         if request.method == "POST" and request.POST['asc_desc'] in ("0","1"):
             context["order"] = request.POST['asc_desc']
@@ -231,6 +246,15 @@ def invoice_form(request,id):
     if id:
         template = "new_invoice_form.html"
         context = {'id':id}
+        objs = reversed(list(invoice.objects.filter(apartment=apartment.objects.get(pk=id))))
+        temp = []
+        tempcount = 0
+        for i in objs:
+            temp.append(i.amount)
+            tempcount += 1
+            if tempcount == 3:
+                break
+        context['prev_trans'] = temp
         if request.method == "POST":
             if request.POST['amount'] and (request.POST['payment'] == "Cash" or (request.POST['payment'] == "Transfer" and request.POST['bank'] and request.POST['trans_date'])) and request.POST['fdate'] and request.POST['tdate']:
                 obj = invoice()
@@ -251,6 +275,8 @@ def invoice_form(request,id):
                 if request.POST['note']:
                     obj.note = request.POST['note']
                 obj.save()
+                obj.invoice_number = len(invoice.objects.filter(owner=obj.owner)) + 1
+                obj.save()
                 return redirect("/invoices/{}".format(id))
             else:
                 context['message'] = "Entered data is not valid."
@@ -267,6 +293,8 @@ def get_reversed(a):
 
 @login_required(login_url='/')
 def print_invoice(request,id):
+    aprt_types = {"Apartment":"شقة","Floor":"دور","Home":"غرفة","Store":"محل ","Studio":"ملحق"}
+    invoice_name = "Invoice.pdf"
 
     pdfmetrics.registerFont(TTFont("Arabic","font.ttf"))
 
@@ -275,57 +303,103 @@ def print_invoice(request,id):
     buffer = io.BytesIO()
 
     p = canvas.Canvas(buffer)
-    p.setFont('Arabic', 15)
+    p.setFont('Arabic', 13)
+
+    offset = 415
     
     if (len(obj) == 1):
-        p.drawString(225, 660, "{}".format(obj[0].today_date.strftime("%d-%m-%Y")))
+        p.drawString(45, 760, "{}".format(obj[0].today_date.strftime("%Y/%m/%d")))
+        p.drawString(45, 760-offset, "{}".format(obj[0].today_date.strftime("%Y/%m/%d")))
 
-        p.drawString(250, 630, "{:05d}".format(id))
+        p.drawString(15, 740, "{}".format(get_display(arabic_reshaper.reshape(obj[0].user.username))))
+        p.drawString(15, 740-offset, "{}".format(get_display(arabic_reshaper.reshape(obj[0].user.username))))
 
-        p.drawString(320, 512, "{}".format(obj[0].amount))
+        p.drawString(380, 760, "{:05d}".format(obj[0].invoice_number))
+        p.drawString(380, 760-offset, "{:05d}".format(obj[0].invoice_number))
 
-        p.drawString(120, 536, get_display(arabic_reshaper.reshape(obj[0].apartment.name)) )
+        p.drawString(380, 740, obj[0].apartment.contract_number)
+        p.drawString(380, 740-offset, obj[0].apartment.contract_number)
 
-        p.drawString(120, 482, obj[0].apartment.contract_number)
+        p.drawString(270, 720, get_display(arabic_reshaper.reshape(obj[0].apartment.name)) )
+        p.drawString(270, 720-offset, get_display(arabic_reshaper.reshape(obj[0].apartment.name)) )
+
+        p.drawString(270, 680, "{}".format(obj[0].amount))
+        p.drawString(270, 680-offset, "{}".format(obj[0].amount))
+
+        p.drawString(260, 640, get_display(arabic_reshaper.reshape(aprt_types[obj[0].apartment.type_of])))
+        p.drawString(260, 640-offset, get_display(arabic_reshaper.reshape(aprt_types[obj[0].apartment.type_of])))
+
+        p.drawString(280, 600, "{}".format(obj[0].apartment.aprt_number))
+        p.drawString(280, 600-offset, "{}".format(obj[0].apartment.aprt_number))
+
+        p.drawString(270, 560, "{}".format(get_display(arabic_reshaper.reshape(obj[0].apartment.building.name))))
+        p.drawString(270, 560-offset, "{}".format(get_display(arabic_reshaper.reshape(obj[0].apartment.building.name))))
 
         if (obj[0].payment_method == "Cash"):
-            p.drawString(484, 447.5, "X")
+            p.drawString(340, 523, "{}".format(obj[0].from_date.year))
+            p.drawString(374, 523, "{}".format(obj[0].from_date.month))
+            p.drawString(392, 523, "{}".format(obj[0].from_date.day))
+            p.drawString(338, 523-offset, "{}".format(obj[0].from_date.year))
+            p.drawString(372, 523-offset, "{}".format(obj[0].from_date.month))
+            p.drawString(390, 523-offset, "{}".format(obj[0].from_date.day))
+
+            p.drawString(145, 523, "{}".format(obj[0].to_date.year))
+            p.drawString(180, 523, "{}".format(obj[0].to_date.month))
+            p.drawString(200, 523, "{}".format(obj[0].to_date.day))
+            p.drawString(143, 523-offset, "{}".format(obj[0].to_date.year))
+            p.drawString(178, 523-offset, "{}".format(obj[0].to_date.month))
+            p.drawString(198, 523-offset, "{}".format(obj[0].to_date.day))
+
+            p.drawString(270, 485, get_display(arabic_reshaper.reshape("نقدا")))
+            p.drawString(270, 485-offset, get_display(arabic_reshaper.reshape("نقدا")))
         else:
-            p.drawString(433, 447.5, "X")
-            p.drawString(80, 447.5, "{}".format(obj[0].transfer_date.strftime("%d-%m-%Y")))
-            p.drawString(225, 447.5, get_display(arabic_reshaper.reshape(obj[0].bank_of_transfer)))
+            invoice_name = "Transfer_Invoice.pdf"
 
-        p.drawString(360, 418, "{}".format(obj[0].apartment.type_of))
+            p.drawString(340, 520, "{}".format(obj[0].from_date.year))
+            p.drawString(374, 520, "{}".format(obj[0].from_date.month))
+            p.drawString(392, 520, "{}".format(obj[0].from_date.day))
+            p.drawString(338, 525-offset, "{}".format(obj[0].from_date.year))
+            p.drawString(372, 525-offset, "{}".format(obj[0].from_date.month))
+            p.drawString(390, 525-offset, "{}".format(obj[0].from_date.day))
 
-        p.drawString(295, 418, "{}".format(obj[0].apartment.aprt_number))
+            p.drawString(145, 520, "{}".format(obj[0].to_date.year))
+            p.drawString(180, 520, "{}".format(obj[0].to_date.month))
+            p.drawString(200, 520, "{}".format(obj[0].to_date.day))
+            p.drawString(143, 525-offset, "{}".format(obj[0].to_date.year))
+            p.drawString(178, 525-offset, "{}".format(obj[0].to_date.month))
+            p.drawString(198, 525-offset, "{}".format(obj[0].to_date.day))
+            
+            p.drawString(135, 475, "{}".format(obj[0].transfer_date.year))
+            p.drawString(175, 475, "{}".format(obj[0].transfer_date.month))
+            p.drawString(202, 475, "{}".format(obj[0].transfer_date.day))
+            p.drawString(135, 482-offset, "{}".format(obj[0].transfer_date.year))
+            p.drawString(175, 482-offset, "{}".format(obj[0].transfer_date.month))
+            p.drawString(202, 482-offset, "{}".format(obj[0].transfer_date.day))
 
-        p.drawString(98, 418, "{}".format(get_display(arabic_reshaper.reshape(obj[0].apartment.building.name))))
+            p.setFont('Arabic', 10)
 
-        p.drawString(370, 393, "{}".format(obj[0].from_date.strftime("%d-%m-%Y")))
+            p.drawString(255, 475, get_display(arabic_reshaper.reshape(obj[0].bank_of_transfer)))
+            p.drawString(255, 480-offset, get_display(arabic_reshaper.reshape(obj[0].bank_of_transfer)))
 
-        p.drawString(80, 393, "{}".format(obj[0].to_date.strftime("%d-%m-%Y")))
+        p.setFont('Arabic', 10)
 
-        p.drawString(380, 190, obj[0].user.username)
+        p.drawString(110, 455, get_display(arabic_reshaper.reshape(obj[0].note)))
+        p.drawString(110, 455-offset, get_display(arabic_reshaper.reshape(obj[0].note)))
 
-        p.drawString(65,333, "{} {} : Remaining Amount".format(get_display(arabic_reshaper.reshape("ريال فقط لاغير")),obj[0].remaining_amount))
-
-        p.setFont('Arabic', 13)
-
-        p.drawString(65,305, get_display(arabic_reshaper.reshape(obj[0].note)))
 
     p.showPage()
     p.save()
 
     buffer.seek(0)
 
-    new_pdf = PdfFileReader(buffer)
+    new_pdf = PdfReader(buffer)
 
-    existing_pdf = PdfFileReader("RealEstateInvoiceCom.pdf")
-    output = PdfFileWriter()
+    existing_pdf = PdfReader(invoice_name)
+    output = PdfWriter()
 
-    page = existing_pdf.getPage(0)
-    page.mergePage(new_pdf.getPage(0))
-    output.addPage(page)
+    page = existing_pdf.pages[0]
+    page.merge_page(new_pdf.pages[0])
+    output.add_page(page)
 
     outputStream = io.BytesIO()
     output.write(outputStream)
@@ -359,7 +433,7 @@ def owner_invoices(request,id):
                 if id != "x":
                     objs = invoice.objects.filter(owner__id=int(id)).order_by("today_date")
                 else:
-                    if obj.type_of_user == 'v':
+                    if obj.type_of_user in ('v','w'):
                         temp2 = invoice.objects.all().order_by("today_date")
                         objs = []
                         for i in temp2:
@@ -371,7 +445,7 @@ def owner_invoices(request,id):
                 if id != "x":
                     objs = invoice.objects.filter(owner__id=int(id)).order_by("-today_date")
                 else:
-                    if obj.type_of_user == 'v':
+                    if obj.type_of_user in ('v','w'):
                         temp2 = invoice.objects.all().order_by("-today_date")
                         objs = []
                         for i in temp2:
@@ -383,7 +457,7 @@ def owner_invoices(request,id):
             if id != "x":
                 objs = invoice.objects.filter(owner__id=int(id))
             else:
-                if obj.type_of_user == 'v':
+                if obj.type_of_user in ('v','w'):
                     temp2 = invoice.objects.all()
                     objs = []
                     for i in temp2:
@@ -393,7 +467,7 @@ def owner_invoices(request,id):
                     objs = invoice.objects.all()
 
         context['objs'] = objs
-        if obj.type_of_user == 'v':
+        if obj.type_of_user in ('v','w'):
             temp2 = invoice_owner.objects.all()
             temp2_list = []
             for i in temp2:
@@ -416,6 +490,7 @@ def maintenance_invoices(request,id):
         context = {}
         obj = get_user_profile(request.user)
         context['type_of_user'] = obj.type_of_user == 'd'
+        context['write_priv'] = obj.type_of_user == 'w'
         aobj = apartment.objects.get(pk=id)
         if request.method == "POST" and request.POST['asc_desc'] in ("0","1"):
             context["order"] = request.POST['asc_desc']
@@ -437,6 +512,15 @@ def maintenance_invoice_form(request,id):
     if id:
         template = "new_maintenance_invoice_form.html"
         context = {'id':id}
+        objs = reversed(list(maintenance_invoice.objects.filter(apartment=apartment.objects.get(pk=id)).order_by("-today_date")))
+        temp = []
+        tempcount = 0
+        for i in objs:
+            temp.append(i.amount)
+            tempcount += 1
+            if tempcount == 3:
+                break
+        context['prev_trans'] = temp
         if request.method == "POST":
             if request.POST['amount']:
                 obj = maintenance_invoice()
@@ -446,6 +530,8 @@ def maintenance_invoice_form(request,id):
                 obj.amount = request.POST['amount']
                 if request.POST['note']:
                     obj.note = request.POST['note']
+                obj.save()
+                obj.invoice_number = len(maintenance_invoice.objects.filter(owner=obj.owner)) + 1
                 obj.save()
                 return redirect("/maintenance-invoices/{}".format(id))
             else:
@@ -478,51 +564,51 @@ def owner_maintenance_invoices(request,id):
             context["order"] = request.POST['asc_desc']
             if request.POST["asc_desc"] == "0":
                 if id != "x":
-                    objs = invoice.objects.filter(owner__id=int(id)).order_by("today_date")
+                    objs = maintenance_invoice.objects.filter(owner__id=int(id)).order_by("today_date")
                 else:
-                    if obj.type_of_user == 'v':
-                        temp2 = invoice.objects.all().order_by("today_date")
+                    if obj.type_of_user in ('v','w'):
+                        temp2 = maintenance_invoice.objects.all().order_by("today_date")
                         objs = []
                         for i in temp2:
                             if i.owner in obj.invoice_owner_allowed.all():
                                 objs.append(i)
                     else:
-                        objs = invoice.objects.all().order_by("today_date")
+                        objs = maintenance_invoice.objects.all().order_by("today_date")
             else:
                 if id != "x":
-                    objs = invoice.objects.filter(owner__id=int(id)).order_by("-today_date")
+                    objs = maintenance_invoice.objects.filter(owner__id=int(id)).order_by("-today_date")
                 else:
-                    if obj.type_of_user == 'v':
-                        temp2 = invoice.objects.all().order_by("-today_date")
+                    if obj.type_of_user in ('v','w'):
+                        temp2 = maintenance_invoice.objects.all().order_by("-today_date")
                         objs = []
                         for i in temp2:
                             if i.owner in obj.invoice_owner_allowed.all():
                                 objs.append(i)
                     else:
-                        objs = invoice.objects.all().order_by("-today_date")
+                        objs = maintenance_invoice.objects.all().order_by("-today_date")
         else:
             if id != "x":
-                objs = invoice.objects.filter(owner__id=int(id))
+                objs = maintenance_invoice.objects.filter(owner__id=int(id))
             else:
-                if obj.type_of_user == 'v':
-                    temp2 = invoice.objects.all()
+                if obj.type_of_user in ('v','w'):
+                    temp2 = maintenance_invoice.objects.all()
                     objs = []
                     for i in temp2:
                         if i.owner in obj.invoice_owner_allowed.all():
                             objs.append(i)
                 else:
-                    objs = invoice.objects.all()
+                    objs = maintenance_invoice.objects.all()
 
         context['objs'] = objs
-        if obj.type_of_user == 'v':
-            temp2 = invoice_owner.objects.all()
+        if obj.type_of_user in ('v','w'):
+            temp2 = maintenance_invoice.objects.all()
             temp2_list = []
             for i in temp2:
                 if i in obj.invoice_owner_allowed.all():
                     temp2_list.append(i)
             context['owners'] = temp2_list
         else:
-            context['owners'] = invoice_owner.objects.all()
+            context['owners'] = maintenance_invoice.objects.all()
         return render(request,template,context)
     else:
         return redirect('/home')
@@ -535,11 +621,14 @@ def owner_report(request,id):
     workbook = openpyxl.load_workbook('Monthly_report.xlsx')
     worksheet = workbook.get_sheet_by_name(workbook.get_sheet_names()[0])
 
-    sel_date = datetime.datetime.now()
+    from_date = request.POST['from-date'].split("-")
+    from_date = datetime.date(year=int(from_date[0]),month=int(from_date[1]),day=int(from_date[2])) 
+    to_date = request.POST['to-date'].split("-")
+    to_date = datetime.date(year=int(to_date[0]),month=int(to_date[1]),day=int(to_date[2]))
 
     owner_obj = invoice_owner.objects.get(pk=id)
-    invoice_objs = invoice.objects.filter(owner=owner_obj,today_date__month=sel_date.month,today_date__year=sel_date.year).order_by("today_date")
-    maintenance_objs = maintenance_invoice.objects.filter(owner=owner_obj,today_date__month=sel_date.month,today_date__year=sel_date.year).order_by("today_date")
+    invoice_objs = invoice.objects.filter(owner=owner_obj,today_date__gte=from_date,today_date__lte=to_date).order_by("today_date")
+    maintenance_objs = maintenance_invoice.objects.filter(owner=owner_obj,today_date__gte=from_date,today_date__lte=to_date).order_by("today_date")
 
     offset = 0
     for i in range(1,32):
@@ -584,10 +673,6 @@ def owner_report(request,id):
         
         if (i % 2 == 0):
             offset += row_offset
-
-
-
-
 
     workbook.save('Monthly_report.xlsx')
 

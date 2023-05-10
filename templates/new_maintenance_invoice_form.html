@@ -38,11 +38,28 @@
         <body>
             <br><br>
             <div class="container">
-                <div class="row justify-content-center">
+                <div class="row">
+                    <div class="col-lg-3">
+                        <div class="card">
+                            <div class="card-head text-center">
+                                Recent Transactions
+                            </div>
+                            <div class="card-body">
+                                {% if prev_trans %}
+                                    {% for i in prev_trans %}
+                                        <p>{{i}}</p>
+                                        <hr/>
+                                    {% endfor %}
+                                {% else %}
+                                    <p>No previous transaction found</p>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
                     <div class="col-lg-6">
                         <div class="card">
                             <div class="card-head text-center">
-                                <a href="{% url 'invoices' id %}"><-Back</a>&ensp;&ensp;&ensp; Add New Maintenance Invoice
+                                <a href="{% url 'maintenance-invoices' id %}"><-Back</a>&ensp;&ensp;&ensp; Add New Maintenance Invoice
                             </div>
                             <div class="card-body">
                                 {% if message %}
