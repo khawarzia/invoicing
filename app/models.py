@@ -17,10 +17,18 @@ class invoice_owner(models.Model):
 class user_profile(models.Model):
     user = models.ForeignKey(User,on_delete=models.CASCADE)
     type_of_user = models.CharField(max_length=20,choices=type_of_user_choices,default='d')
+    #download_report_allowed = models.BooleanField(default=True)
+    #delete_invoice_allowed = models.BooleanField(default=True)
     invoice_owner_allowed = models.ManyToManyField(invoice_owner,blank=True)
 
     def __str__(self):
         return "Profile for user - {}".format(self.user.username)
+    
+class user_permission(models.Model):
+    user = models.ForeignKey(User,on_delete=models.CASCADE)
+    download_report_allowed = models.BooleanField(default=True)
+    delete_invoice_allowed = models.BooleanField(default=True)
+    invoice_owner_allowed = models.ManyToManyField(invoice_owner,blank=True)
     
 class building(models.Model):
     name = models.CharField(max_length=300,null=True,blank=True)

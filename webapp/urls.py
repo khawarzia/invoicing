@@ -47,4 +47,7 @@ urlpatterns = [
 
     path("owner-report/<int:id>",views.owner_report,name="owner-report"),
 
+    path("check-download-allowed/<int:id>",views.check_download_allowed),
+    path("check-delete-allowed/<int:id>/<str:type_of>",views.check_delete_allowed),
+
 ]

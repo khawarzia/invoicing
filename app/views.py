@@ -3,7 +3,7 @@ from django.contrib.auth.models import User
 from django.contrib import auth
 from django.contrib.auth.decorators import login_required
 import io
-from django.http import FileResponse
+from django.http import FileResponse, JsonResponse
 from reportlab.pdfgen import canvas
 from .models import *
 from PyPDF2 import PdfReader, PdfWriter
@@ -50,6 +50,7 @@ def home(request):
     template = "home.html"
     context = {}
     obj = get_user_profile(request.user)
+    
     context['type_of_user'] = obj.type_of_user == 'd'
     if obj.type_of_user in ('v','w'):
         temp = building.objects.all()
@@ -148,22 +149,18 @@ def apartment_form(request,id):
         if request.method == "POST":
             if request.POST['name'] and request.POST['num'] and request.POST['phone'] and request.POST['type_of'] and request.POST['dob'] and request.POST['cnum'] and request.POST['enum']:
                 bobj = building.objects.get(pk=id)
-                objs = apartment.objects.filter(aprt_number=request.POST['num'],building=bobj)
-                if len(objs) == 0:
-                    obj = apartment()
-                    obj.aprt_number = request.POST['num']
-                    obj.name = request.POST['name']
-                    obj.type_of = request.POST['type_of']
-                    obj.dob = request.POST['dob']
-                    obj.phone_nmber = request.POST['phone']
-                    obj.elect_number = request.POST['enum']
-                    obj.contract_number = request.POST['cnum']
-                    obj.note = request.POST['note']
-                    obj.building = bobj
-                    obj.save()
-                    return redirect("/apartments/{}".format(id))
-                else:
-                    context['message'] = "Apartment with that number already exists in this building."
+                obj = apartment()
+                obj.aprt_number = request.POST['num']
+                obj.name = request.POST['name']
+                obj.type_of = request.POST['type_of']
+                obj.dob = request.POST['dob']
+                obj.phone_nmber = request.POST['phone']
+                obj.elect_number = request.POST['enum']
+                obj.contract_number = request.POST['cnum']
+                obj.note = request.POST['note']
+                obj.building = bobj
+                obj.save()
+                return redirect("/apartments/{}".format(id))
             else:
                 context['message'] = "Entered data is not valid."
         return render(request,template,context)
@@ -178,20 +175,17 @@ def edit_apartment_form(request,id):
         if request.method == "POST":
             if request.POST['name'] and request.POST['num'] and request.POST['phone'] and request.POST['type_of'] and request.POST['dob'] and request.POST['cnum'] and request.POST['enum']:
                 objs = apartment.objects.filter(pk=id)
-                if len(objs) == 1 and len(apartment.objects.filter(building=objs[0].building, aprt_number=request.POST['num'])) == 0:
-                    obj = objs[0]
-                    obj.aprt_number = request.POST['num']
-                    obj.name = request.POST['name']
-                    obj.type_of = request.POST['type_of']
-                    obj.dob = request.POST['dob']
-                    obj.phone_nmber = request.POST['phone']
-                    obj.elect_number = request.POST['enum']
-                    obj.contract_number = request.POST['cnum']
-                    obj.note = request.POST['note']
-                    obj.save()
-                    return redirect("/invoices/{}".format(id))
-                else:
-                    context['message'] = "Apartment with that number already exists in this building."
+                obj = objs[0]
+                obj.aprt_number = request.POST['num']
+                obj.name = request.POST['name']
+                obj.type_of = request.POST['type_of']
+                obj.dob = request.POST['dob']
+                obj.phone_nmber = request.POST['phone']
+                obj.elect_number = request.POST['enum']
+                obj.contract_number = request.POST['cnum']
+                obj.note = request.POST['note']
+                obj.save()
+                return redirect("/invoices/{}".format(id))
             else:
                 context['message'] = "Entered data is not valid."
         obj = apartment.objects.filter(pk=id)[0]
@@ -223,6 +217,7 @@ def invoices(request,id):
         template = "apartments_invoice.html"
         context = {}
         obj = get_user_profile(request.user)
+        
         context['type_of_user'] = obj.type_of_user == 'd'
         context['write_priv'] = obj.type_of_user == 'w'
         aobj = apartment.objects.get(pk=id)
@@ -248,13 +243,15 @@ def invoice_form(request,id):
         context = {'id':id}
         objs = reversed(list(invoice.objects.filter(apartment=apartment.objects.get(pk=id))))
         temp = []
+        temp1 = []
         tempcount = 0
         for i in objs:
             temp.append(i.amount)
+            temp1.append("From : {} To : {}".format(i.from_date,i.to_date))
             tempcount += 1
             if tempcount == 3:
                 break
-        context['prev_trans'] = temp
+        context['prev_trans'] = zip(temp1,temp)
         if request.method == "POST":
             if request.POST['amount'] and (request.POST['payment'] == "Cash" or (request.POST['payment'] == "Transfer" and request.POST['bank'] and request.POST['trans_date'])) and request.POST['fdate'] and request.POST['tdate']:
                 obj = invoice()
@@ -275,7 +272,9 @@ def invoice_form(request,id):
                 if request.POST['note']:
                     obj.note = request.POST['note']
                 obj.save()
-                obj.invoice_number = len(invoice.objects.filter(owner=obj.owner)) + 1
+                temp_len_inv = len(invoice.objects.filter(owner=obj.owner))
+                if temp_len_inv > 0:
+                    obj.invoice_number = invoice.objects.filter(owner=obj.owner).order_by("-invoice_number")[0].invoice_number + 1
                 obj.save()
                 return redirect("/invoices/{}".format(id))
             else:
@@ -424,6 +423,7 @@ def owner_invoices(request,id):
         template = "owners_invoice.html"
         context = {}
         obj = get_user_profile(request.user)
+        
         context['type_of_user'] = obj.type_of_user == 'd'
         if id != "x":
             context['sel_owner'] = int(id)
@@ -489,6 +489,7 @@ def maintenance_invoices(request,id):
         template = "apartments_maintenance_invoice.html"
         context = {}
         obj = get_user_profile(request.user)
+        
         context['type_of_user'] = obj.type_of_user == 'd'
         context['write_priv'] = obj.type_of_user == 'w'
         aobj = apartment.objects.get(pk=id)
@@ -514,13 +515,15 @@ def maintenance_invoice_form(request,id):
         context = {'id':id}
         objs = reversed(list(maintenance_invoice.objects.filter(apartment=apartment.objects.get(pk=id)).order_by("-today_date")))
         temp = []
+        temp1 = []
         tempcount = 0
         for i in objs:
             temp.append(i.amount)
+            temp1.append("On : {}".format(i.today_date))
             tempcount += 1
             if tempcount == 3:
                 break
-        context['prev_trans'] = temp
+        context['prev_trans'] = zip(temp1,temp)
         if request.method == "POST":
             if request.POST['amount']:
                 obj = maintenance_invoice()
@@ -531,7 +534,9 @@ def maintenance_invoice_form(request,id):
                 if request.POST['note']:
                     obj.note = request.POST['note']
                 obj.save()
-                obj.invoice_number = len(maintenance_invoice.objects.filter(owner=obj.owner)) + 1
+                temp_len_inv = len(maintenance_invoice.objects.filter(owner=obj.owner))
+                if temp_len_inv > 0:
+                    obj.invoice_number = maintenance_invoice.objects.filter(owner=obj.owner).order_by("-invoice_number")[0].invoice_number + 1
                 obj.save()
                 return redirect("/maintenance-invoices/{}".format(id))
             else:
@@ -557,6 +562,7 @@ def owner_maintenance_invoices(request,id):
         template = "owners_maintenance_invoice.html"
         context = {}
         obj = get_user_profile(request.user)
+        
         context['type_of_user'] = obj.type_of_user == 'd'
         if id != "x":
             context['sel_owner'] = int(id)
@@ -677,3 +683,39 @@ def owner_report(request,id):
     workbook.save('Monthly_report.xlsx')
 
     return FileResponse(open("Monthly_report.xlsx","rb"), as_attachment=True)
+
+@login_required(login_url='/')
+def check_download_allowed(request,id):
+    user_perms = user_permission.objects.filter(user=request.user)
+    if (len(user_perms) > 0):
+        owner_obj = invoice_owner.objects.get(pk=id)
+        obj = user_perms[0]
+        if obj.download_report_allowed:
+            if owner_obj in obj.invoice_owner_allowed.all():
+                return JsonResponse({'check':True})
+            else:
+                return JsonResponse({'check':False})
+        else:
+            return JsonResponse({'check':False})
+    else:
+        return JsonResponse({'check':True})
+    
+@login_required(login_url='/')
+def check_delete_allowed(request,id,type_of):
+    user_perms = user_permission.objects.filter(user=request.user)
+    if (len(user_perms) > 0):
+        if type_of == "m":
+            obj = maintenance_invoice.objects.get(pk=id)
+        else:
+            obj = invoice.objects.get(pk=id)
+        owner_obj = obj.owner
+        obj = user_perms[0]
+        if obj.delete_invoice_allowed:
+            if owner_obj in obj.invoice_owner_allowed.all():
+                return JsonResponse({'check':True})
+            else:
+                return JsonResponse({'check':False})
+        else:
+            return JsonResponse({'check':False})
+    else:
+        return JsonResponse({'check':True})

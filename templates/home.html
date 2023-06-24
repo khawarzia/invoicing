@@ -96,7 +96,15 @@
                                                     window.alert("Number of days for report generation cannot be more than 31");
                                                 }
                                                 else{
-                                                    obj.form.submit();
+                                                    $.get('/check-download-allowed/'+document.getElementById("owners-invoice").value , function (data){
+                                                        if (data['check']){
+                                                            obj.form.submit();
+                                                        }
+                                                        else{
+                                                            window.alert("Action is not allowed");
+                                                        }
+                                                    });
+                                                    
                                                 }
                                             }
                                             else{

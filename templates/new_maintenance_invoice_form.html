@@ -39,15 +39,16 @@
             <br><br>
             <div class="container">
                 <div class="row">
-                    <div class="col-lg-3">
+                    <div class="col-lg-4">
                         <div class="card">
                             <div class="card-head text-center">
                                 Recent Transactions
                             </div>
                             <div class="card-body">
                                 {% if prev_trans %}
-                                    {% for i in prev_trans %}
+                                    {% for i,j in prev_trans %}
                                         <p>{{i}}</p>
+                                        <p>{{j}}</p>
                                         <hr/>
                                     {% endfor %}
                                 {% else %}

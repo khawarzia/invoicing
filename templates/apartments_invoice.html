@@ -14,9 +14,17 @@
         <body>
             <script>
                 function confirm_delete(a){
-                    if (confirm("Are you sure you want to delete this?")){
-                        window.location.href = a;
-                    }
+                    temp = a.split("delete-invoice/")[1];
+                    $.get('/check-delete-allowed/'+temp+'/i', function (data){
+                        if (data['check']){
+                            if (confirm("Are you sure you want to delete this?")){
+                                window.location.href = a;
+                            }
+                        }
+                        else{
+                            window.alert("Action is not allowed");
+                        }
+                    });
                 }
             </script>
             <br><br>
