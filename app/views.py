@@ -224,11 +224,11 @@ def invoices(request,id):
         if request.method == "POST" and request.POST['asc_desc'] in ("0","1"):
             context["order"] = request.POST['asc_desc']
             if request.POST["asc_desc"] == "0":
-                objs = invoice.objects.filter(apartment=aobj).order_by("today_date")
+                objs = invoice.objects.filter(apartment=aobj,tenant=aobj.curr_tenant).order_by("today_date")
             else:
-                objs = invoice.objects.filter(apartment=aobj).order_by("-today_date")
+                objs = invoice.objects.filter(apartment=aobj,tenant=aobj.curr_tenant).order_by("-today_date")
         else:
-            objs = invoice.objects.filter(apartment=aobj)
+            objs = invoice.objects.filter(apartment=aobj,tenant=aobj.curr_tenant)
         context['aobj'] = aobj
         context['date_dis'] = aobj.dob.strftime("%Y-%m-%d")
         context['objs'] = objs
@@ -246,7 +246,7 @@ def invoice_form(request,id):
         temp1 = []
         tempcount = 0
         for i in objs:
-            temp.append(i.amount)
+            temp.append(i.remaining_amount)
             temp1.append("From : {} To : {}".format(i.from_date,i.to_date))
             tempcount += 1
             if tempcount == 3:
@@ -305,85 +305,122 @@ def print_invoice(request,id):
     p.setFont('Arabic', 13)
 
     offset = 415
+    remain_offset = 0
+    x_remain_offset = 0
     
     if (len(obj) == 1):
-        p.drawString(45, 760, "{}".format(obj[0].today_date.strftime("%Y/%m/%d")))
-        p.drawString(45, 760-offset, "{}".format(obj[0].today_date.strftime("%Y/%m/%d")))
-
-        p.drawString(15, 740, "{}".format(get_display(arabic_reshaper.reshape(obj[0].user.username))))
-        p.drawString(15, 740-offset, "{}".format(get_display(arabic_reshaper.reshape(obj[0].user.username))))
-
-        p.drawString(380, 760, "{:05d}".format(obj[0].invoice_number))
-        p.drawString(380, 760-offset, "{:05d}".format(obj[0].invoice_number))
-
-        p.drawString(380, 740, obj[0].apartment.contract_number)
-        p.drawString(380, 740-offset, obj[0].apartment.contract_number)
-
-        p.drawString(270, 720, get_display(arabic_reshaper.reshape(obj[0].apartment.name)) )
-        p.drawString(270, 720-offset, get_display(arabic_reshaper.reshape(obj[0].apartment.name)) )
-
-        p.drawString(270, 680, "{}".format(obj[0].amount))
-        p.drawString(270, 680-offset, "{}".format(obj[0].amount))
-
-        p.drawString(260, 640, get_display(arabic_reshaper.reshape(aprt_types[obj[0].apartment.type_of])))
-        p.drawString(260, 640-offset, get_display(arabic_reshaper.reshape(aprt_types[obj[0].apartment.type_of])))
-
-        p.drawString(280, 600, "{}".format(obj[0].apartment.aprt_number))
-        p.drawString(280, 600-offset, "{}".format(obj[0].apartment.aprt_number))
-
-        p.drawString(270, 560, "{}".format(get_display(arabic_reshaper.reshape(obj[0].apartment.building.name))))
-        p.drawString(270, 560-offset, "{}".format(get_display(arabic_reshaper.reshape(obj[0].apartment.building.name))))
 
         if (obj[0].payment_method == "Cash"):
-            p.drawString(340, 523, "{}".format(obj[0].from_date.year))
-            p.drawString(374, 523, "{}".format(obj[0].from_date.month))
-            p.drawString(392, 523, "{}".format(obj[0].from_date.day))
-            p.drawString(338, 523-offset, "{}".format(obj[0].from_date.year))
-            p.drawString(372, 523-offset, "{}".format(obj[0].from_date.month))
-            p.drawString(390, 523-offset, "{}".format(obj[0].from_date.day))
 
-            p.drawString(145, 523, "{}".format(obj[0].to_date.year))
-            p.drawString(180, 523, "{}".format(obj[0].to_date.month))
-            p.drawString(200, 523, "{}".format(obj[0].to_date.day))
-            p.drawString(143, 523-offset, "{}".format(obj[0].to_date.year))
-            p.drawString(178, 523-offset, "{}".format(obj[0].to_date.month))
-            p.drawString(198, 523-offset, "{}".format(obj[0].to_date.day))
-
-            p.drawString(270, 485, get_display(arabic_reshaper.reshape("نقدا")))
-            p.drawString(270, 485-offset, get_display(arabic_reshaper.reshape("نقدا")))
-        else:
-            invoice_name = "Transfer_Invoice.pdf"
-
-            p.drawString(340, 520, "{}".format(obj[0].from_date.year))
-            p.drawString(374, 520, "{}".format(obj[0].from_date.month))
-            p.drawString(392, 520, "{}".format(obj[0].from_date.day))
-            p.drawString(338, 525-offset, "{}".format(obj[0].from_date.year))
-            p.drawString(372, 525-offset, "{}".format(obj[0].from_date.month))
-            p.drawString(390, 525-offset, "{}".format(obj[0].from_date.day))
-
-            p.drawString(145, 520, "{}".format(obj[0].to_date.year))
-            p.drawString(180, 520, "{}".format(obj[0].to_date.month))
-            p.drawString(200, 520, "{}".format(obj[0].to_date.day))
-            p.drawString(143, 525-offset, "{}".format(obj[0].to_date.year))
-            p.drawString(178, 525-offset, "{}".format(obj[0].to_date.month))
-            p.drawString(198, 525-offset, "{}".format(obj[0].to_date.day))
+            if (obj[0].remaining_amount > 0):
+                invoice_name = "Cash_Remain.pdf"
+                remain_offset = 57
+                offset = offset + 25
+                p.drawString(270, 410+remain_offset, "{}".format(obj[0].remaining_amount))
+                p.drawString(270, 410-offset+remain_offset, "{}".format(obj[0].remaining_amount))
             
-            p.drawString(135, 475, "{}".format(obj[0].transfer_date.year))
-            p.drawString(175, 475, "{}".format(obj[0].transfer_date.month))
-            p.drawString(202, 475, "{}".format(obj[0].transfer_date.day))
-            p.drawString(135, 482-offset, "{}".format(obj[0].transfer_date.year))
-            p.drawString(175, 482-offset, "{}".format(obj[0].transfer_date.month))
-            p.drawString(202, 482-offset, "{}".format(obj[0].transfer_date.day))
+            p.drawString(340, 523+remain_offset, "{}".format(obj[0].from_date.year))
+            p.drawString(374, 523+remain_offset, "{}".format(obj[0].from_date.month))
+            p.drawString(392, 523+remain_offset, "{}".format(obj[0].from_date.day))
+            p.drawString(338, 523-offset+remain_offset, "{}".format(obj[0].from_date.year))
+            p.drawString(372, 523-offset+remain_offset, "{}".format(obj[0].from_date.month))
+            p.drawString(390, 523-offset+remain_offset, "{}".format(obj[0].from_date.day))
 
-            p.setFont('Arabic', 10)
+            p.drawString(145, 523+remain_offset, "{}".format(obj[0].to_date.year))
+            p.drawString(180, 523+remain_offset, "{}".format(obj[0].to_date.month))
+            p.drawString(200, 523+remain_offset, "{}".format(obj[0].to_date.day))
+            p.drawString(143, 523-offset+remain_offset, "{}".format(obj[0].to_date.year))
+            p.drawString(178, 523-offset+remain_offset, "{}".format(obj[0].to_date.month))
+            p.drawString(198, 523-offset+remain_offset, "{}".format(obj[0].to_date.day))
 
-            p.drawString(255, 475, get_display(arabic_reshaper.reshape(obj[0].bank_of_transfer)))
-            p.drawString(255, 480-offset, get_display(arabic_reshaper.reshape(obj[0].bank_of_transfer)))
+            p.drawString(270, 485+remain_offset, get_display(arabic_reshaper.reshape("نقدا")))
+            p.drawString(270, 485-offset+remain_offset, get_display(arabic_reshaper.reshape("نقدا")))
+        else:
+            if (obj[0].remaining_amount > 0):
+                invoice_name = "Transfer_Remain.pdf"
+                remain_offset = 71
+                offset = offset + 25
+                x_remain_offset = 6
+                p.drawString(270, 410+remain_offset, "{}".format(obj[0].remaining_amount))
+                p.drawString(270, 410-offset+remain_offset, "{}".format(obj[0].remaining_amount))
+
+                p.drawString(135+x_remain_offset, 481+remain_offset, "{}".format(obj[0].transfer_date.year))
+                p.drawString(175+x_remain_offset, 481+remain_offset, "{}".format(obj[0].transfer_date.month))
+                p.drawString(202+x_remain_offset, 481+remain_offset, "{}".format(obj[0].transfer_date.day))
+                p.drawString(135+x_remain_offset, 487-offset+remain_offset, "{}".format(obj[0].transfer_date.year))
+                p.drawString(175+x_remain_offset, 487-offset+remain_offset, "{}".format(obj[0].transfer_date.month))
+                p.drawString(202+x_remain_offset, 487-offset+remain_offset, "{}".format(obj[0].transfer_date.day))
+
+                x_remain_offset = 6
+
+                p.setFont('Arabic', 10)
+
+                p.drawString(255, 479+remain_offset, get_display(arabic_reshaper.reshape(obj[0].bank_of_transfer)))
+                p.drawString(255, 484-offset+remain_offset, get_display(arabic_reshaper.reshape(obj[0].bank_of_transfer)))
+
+                p.setFont('Arabic', 13)
+            else:
+                invoice_name = "Transfer_Invoice.pdf"
+
+                p.drawString(135-x_remain_offset, 475+remain_offset, "{}".format(obj[0].transfer_date.year))
+                p.drawString(175-x_remain_offset, 475+remain_offset, "{}".format(obj[0].transfer_date.month))
+                p.drawString(202-x_remain_offset, 475+remain_offset, "{}".format(obj[0].transfer_date.day))
+                p.drawString(135-x_remain_offset, 482-offset+remain_offset, "{}".format(obj[0].transfer_date.year))
+                p.drawString(175-x_remain_offset, 482-offset+remain_offset, "{}".format(obj[0].transfer_date.month))
+                p.drawString(202-x_remain_offset, 482-offset+remain_offset, "{}".format(obj[0].transfer_date.day))
+
+                p.setFont('Arabic', 10)
+
+                p.drawString(255, 475+remain_offset, get_display(arabic_reshaper.reshape(obj[0].bank_of_transfer)))
+                p.drawString(255, 480-offset+remain_offset, get_display(arabic_reshaper.reshape(obj[0].bank_of_transfer)))
+
+                p.setFont('Arabic', 13)
+
+            p.drawString(340-x_remain_offset, 520+remain_offset, "{}".format(obj[0].from_date.year))
+            p.drawString(374-x_remain_offset, 520+remain_offset, "{}".format(obj[0].from_date.month))
+            p.drawString(392-x_remain_offset, 520+remain_offset, "{}".format(obj[0].from_date.day))
+            p.drawString(338-x_remain_offset, 525-offset+remain_offset, "{}".format(obj[0].from_date.year))
+            p.drawString(372-x_remain_offset, 525-offset+remain_offset, "{}".format(obj[0].from_date.month))
+            p.drawString(390-x_remain_offset, 525-offset+remain_offset, "{}".format(obj[0].from_date.day))
+
+            p.drawString(145-x_remain_offset, 520+remain_offset, "{}".format(obj[0].to_date.year))
+            p.drawString(180-x_remain_offset, 520+remain_offset, "{}".format(obj[0].to_date.month))
+            p.drawString(200-x_remain_offset, 520+remain_offset, "{}".format(obj[0].to_date.day))
+            p.drawString(143-x_remain_offset, 525-offset+remain_offset, "{}".format(obj[0].to_date.year))
+            p.drawString(178-x_remain_offset, 525-offset+remain_offset, "{}".format(obj[0].to_date.month))
+            p.drawString(198-x_remain_offset, 525-offset+remain_offset, "{}".format(obj[0].to_date.day))
+
+        p.drawString(45, 760+remain_offset, "{}".format(obj[0].today_date.strftime("%Y/%m/%d")))
+        p.drawString(45, 760-offset+remain_offset, "{}".format(obj[0].today_date.strftime("%Y/%m/%d")))
+
+        p.drawString(15, 740+remain_offset, "{}".format(get_display(arabic_reshaper.reshape(obj[0].user.username))))
+        p.drawString(15, 740-offset+remain_offset, "{}".format(get_display(arabic_reshaper.reshape(obj[0].user.username))))
+
+        p.drawString(380, 760+remain_offset, "{:05d}".format(obj[0].invoice_number))
+        p.drawString(380, 760-offset+remain_offset, "{:05d}".format(obj[0].invoice_number))
+
+        p.drawString(380, 740+remain_offset, obj[0].apartment.contract_number)
+        p.drawString(380, 740-offset+remain_offset, obj[0].apartment.contract_number)
+
+        p.drawString(270, 720+remain_offset, get_display(arabic_reshaper.reshape(obj[0].apartment.name)) )
+        p.drawString(270, 720-offset+remain_offset, get_display(arabic_reshaper.reshape(obj[0].apartment.name)) )
+
+        p.drawString(270, 680+remain_offset, "{}".format(obj[0].amount))
+        p.drawString(270, 680-offset+remain_offset, "{}".format(obj[0].amount))
+
+        p.drawString(260, 640+remain_offset, get_display(arabic_reshaper.reshape(aprt_types[obj[0].apartment.type_of])))
+        p.drawString(260, 640-offset+remain_offset, get_display(arabic_reshaper.reshape(aprt_types[obj[0].apartment.type_of])))
+
+        p.drawString(280, 600+remain_offset, "{}".format(obj[0].apartment.aprt_number))
+        p.drawString(280, 600-offset+remain_offset, "{}".format(obj[0].apartment.aprt_number))
+
+        p.drawString(270, 560+remain_offset, "{}".format(get_display(arabic_reshaper.reshape(obj[0].apartment.building.name))))
+        p.drawString(270, 560-offset+remain_offset, "{}".format(get_display(arabic_reshaper.reshape(obj[0].apartment.building.name))))
 
         p.setFont('Arabic', 10)
 
-        p.drawString(110, 455, get_display(arabic_reshaper.reshape(obj[0].note)))
-        p.drawString(110, 455-offset, get_display(arabic_reshaper.reshape(obj[0].note)))
+        p.drawString(110, 455+remain_offset, get_display(arabic_reshaper.reshape(obj[0].note)))
+        p.drawString(110, 455-offset+remain_offset, get_display(arabic_reshaper.reshape(obj[0].note)))
 
 
     p.showPage()
@@ -496,11 +533,11 @@ def maintenance_invoices(request,id):
         if request.method == "POST" and request.POST['asc_desc'] in ("0","1"):
             context["order"] = request.POST['asc_desc']
             if request.POST["asc_desc"] == "0":
-                objs = maintenance_invoice.objects.filter(apartment=aobj).order_by("today_date")
+                objs = maintenance_invoice.objects.filter(apartment=aobj,tenant=aobj.curr_tenant).order_by("today_date")
             else:
-                objs = maintenance_invoice.objects.filter(apartment=aobj).order_by("-today_date")
+                objs = maintenance_invoice.objects.filter(apartment=aobj,tenant=aobj.curr_tenant).order_by("-today_date")
         else:
-            objs = maintenance_invoice.objects.filter(apartment=aobj)
+            objs = maintenance_invoice.objects.filter(apartment=aobj,tenant=aobj.curr_tenant)
         context['aobj'] = aobj
         context['date_dis'] = aobj.dob.strftime("%Y-%m-%d")
         context['objs'] = objs
@@ -620,11 +657,11 @@ def owner_maintenance_invoices(request,id):
         return redirect('/home')
 
 def owner_report(request,id):
-    date_col_rows = [{'row_start':4,'row_end':19,'col_start':10,'col_end':16},{'row_start':4,'row_end':19,'col_start':2,'col_end':8}]
-    date_col_rows_inv = [{'row_start':4,'row_end':19,'col_start':10,'col_end':14},{'row_start':4,'row_end':19,'col_start':2,'col_end':6}]
-    date_col_rows_main = [{'row_start':4,'row_end':19,'col_start':15,'col_end':16},{'row_start':4,'row_end':19,'col_start':7,'col_end':8}]
-    row_offset = 21
-    workbook = openpyxl.load_workbook('Monthly_report.xlsx')
+    date_col_rows = [{'row_start':4,'row_end':29,'col_start':10,'col_end':16},{'row_start':4,'row_end':29,'col_start':2,'col_end':8}]
+    date_col_rows_inv = [{'row_start':4,'row_end':29,'col_start':10,'col_end':14},{'row_start':4,'row_end':29,'col_start':2,'col_end':6}]
+    date_col_rows_main = [{'row_start':4,'row_end':29,'col_start':15,'col_end':16},{'row_start':4,'row_end':29,'col_start':7,'col_end':8}]
+    row_offset = 31
+    workbook = openpyxl.load_workbook('Monthly_reportNew.xlsx')
     worksheet = workbook.get_sheet_by_name(workbook.get_sheet_names()[0])
 
     from_date = request.POST['from-date'].split("-")
@@ -680,9 +717,9 @@ def owner_report(request,id):
         if (i % 2 == 0):
             offset += row_offset
 
-    workbook.save('Monthly_report.xlsx')
+    workbook.save('Monthly_reportNew.xlsx')
 
-    return FileResponse(open("Monthly_report.xlsx","rb"), as_attachment=True)
+    return FileResponse(open("Monthly_reportNew.xlsx","rb"), as_attachment=True)
 
 @login_required(login_url='/')
 def check_download_allowed(request,id):
@@ -719,3 +756,77 @@ def check_delete_allowed(request,id,type_of):
             return JsonResponse({'check':False})
     else:
         return JsonResponse({'check':True})
+    
+@login_required(login_url='/')
+def receive_invoice(request,id):
+    obj = invoice.objects.get(pk=id)
+    obj.received_by = request.user.username
+    obj.save()
+    return redirect('/invoices/{}'.format(obj.apartment.id))
+
+@login_required(login_url='/')
+def change_tenant(request,id,sel):
+    obj = apartment.objects.get(pk=id)
+
+    tobj = prev_tenants()
+    tobj.name = obj.curr_tenant
+    tobj.save()
+
+    obj.tenant_hist.add(tobj)
+    obj.curr_tenant = request.POST['tenant']
+    obj.save()
+
+    if sel == 0:
+        return redirect('/invoices/{}'.format(id))
+    else:
+        return redirect('/maintenance-invoices/{}'.format(id))
+    
+@login_required(login_url='/')
+def invoices_hist(request,id):
+    if id:
+        template = "apartments_invoice.html"
+        context = {}
+        obj = get_user_profile(request.user)
+        
+        context['type_of_user'] = obj.type_of_user == 'd'
+        context['write_priv'] = obj.type_of_user == 'w'
+        aobj = apartment.objects.get(pk=id)
+        if request.method == "POST" and request.POST['asc_desc'] in ("0","1"):
+            context["order"] = request.POST['asc_desc']
+            if request.POST["asc_desc"] == "0":
+                objs = invoice.objects.filter(apartment=aobj,tenant=request.POST['ten']).order_by("today_date")
+            else:
+                objs = invoice.objects.filter(apartment=aobj,tenant=request.POST['ten']).order_by("-today_date")
+        else:
+            objs = invoice.objects.filter(apartment=aobj,tenant=request.POST['ten'])
+        context['aobj'] = aobj
+        context['date_dis'] = aobj.dob.strftime("%Y-%m-%d")
+        context['objs'] = objs
+        return render(request,template,context)
+    else:
+        return redirect('/home')
+    
+@login_required(login_url='/')
+def maintenance_invoices_hist(request,id):
+    if id:
+        template = "apartments_maintenance_invoice.html"
+        context = {}
+        obj = get_user_profile(request.user)
+        
+        context['type_of_user'] = obj.type_of_user == 'd'
+        context['write_priv'] = obj.type_of_user == 'w'
+        aobj = apartment.objects.get(pk=id)
+        if request.method == "POST" and request.POST['asc_desc'] in ("0","1"):
+            context["order"] = request.POST['asc_desc']
+            if request.POST["asc_desc"] == "0":
+                objs = maintenance_invoice.objects.filter(apartment=aobj,tenant=request.POST['ten']).order_by("today_date")
+            else:
+                objs = maintenance_invoice.objects.filter(apartment=aobj,tenant=request.POST['ten']).order_by("-today_date")
+        else:
+            objs = maintenance_invoice.objects.filter(apartment=aobj,tenant=request.POST['ten'])
+        context['aobj'] = aobj
+        context['date_dis'] = aobj.dob.strftime("%Y-%m-%d")
+        context['objs'] = objs
+        return render(request,template,context)
+    else:
+        return redirect('/home')

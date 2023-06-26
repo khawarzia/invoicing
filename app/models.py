@@ -13,6 +13,12 @@ class invoice_owner(models.Model):
 
     def __str__(self):
         return self.name
+    
+class prev_tenants(models.Model):
+    name = models.CharField(max_length=300,null=True,blank=True)
+
+    def __str__(self):
+        return self.name
 
 class user_profile(models.Model):
     user = models.ForeignKey(User,on_delete=models.CASCADE)
@@ -54,6 +60,9 @@ class apartment(models.Model):
     temp_del = models.BooleanField(default=False)
     temp_del_date = models.DateField(null=True,blank=True)
 
+    curr_tenant = models.CharField(max_length=300,null=True,blank=True,default="default")
+    tenant_hist = models.ManyToManyField(prev_tenants)
+
     def __str__(self):
         return self.building.name + " - " + self.aprt_number
     
@@ -78,9 +87,18 @@ class apartment(models.Model):
                 return "red"
             else:
                 return "black"
+            
+    def getLastToDate(self):
+        invs = invoice.objects.filter(apartment=self).order_by("today_date")
+        if (len(invs) == 0):
+            return ""
+        inv = invs[len(invs) - 1]
+        to_date = date(inv.to_date.year,inv.to_date.month,inv.to_date.day)
+        return "{}".format(to_date)
 
 class invoice(models.Model):
     user = models.ForeignKey(User,on_delete=models.SET_NULL,null=True,blank=True)
+    received_by = models.CharField(max_length=200,null=True,blank=True,default="-")
     apartment = models.ForeignKey(apartment,on_delete=models.SET_NULL,null=True,blank=True)
     owner = models.ForeignKey(invoice_owner,on_delete=models.CASCADE)
     amount = models.IntegerField(default=0)
@@ -95,6 +113,8 @@ class invoice(models.Model):
 
     invoice_number = models.IntegerField(default=0)
 
+    tenant = models.CharField(max_length=300,null=True,blank=True,default="default")
+
     def __str__(self):
         return self.apartment.building.name + " - " + self.apartment.aprt_number + " - {}".format(self.id)
 
@@ -107,6 +127,8 @@ class maintenance_invoice(models.Model):
     note = models.TextField(max_length=2000,null=True,blank=True)
 
     invoice_number = models.IntegerField(default=0)
+
+    tenant = models.CharField(max_length=300,null=True,blank=True,default="default")
     
     def __str__(self):
         return self.apartment.building.name + " - " + self.apartment.aprt_number + " - {}".format(self.id)

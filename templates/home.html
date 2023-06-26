@@ -46,7 +46,7 @@
                     <div class="col-lg-3">
                         <div class="card">
                             <div class="card-head text-center">
-                                Showing Invoice Owners : <select class="form-control" id="owners-invoice" onchange="show_download_report_button();">
+                                Showing Invoice Owners : <select class="form-control" id="owners-invoice" onchange="show_download_report_button();filterBuildings(this.value)">
                                     <option value="x">All</option>
                                     {% for i in owners %}
                                         <option value="{{i.id}}">{{i.name}}</option>
@@ -116,6 +116,30 @@
                                         }
 
                                     }
+                                    function filterBuildings(a){
+                                        if (a == 'x'){
+                                            temp = document.getElementsByClassName("abcd");
+                                            for (i=0 ; i<temp.length ; i++){
+                                                temp[i].style = "display:block;";
+                                            }
+                                        }
+                                        else{
+                                            temp = document.getElementsByClassName("abcd");
+                                            for (i=0 ; i<temp.length ; i++){
+                                                temp[i].style = "display:none;";
+                                            }
+
+                                            temp = document.getElementsByClassName("abcd "+a);
+                                            if (temp.length == 0){
+                                                window.alert("No buildings available for this Owner");
+                                            }
+                                            else{
+                                                for (i=0 ; i<temp.length ; i++){
+                                                    temp[i].style = "display:block;";
+                                                }
+                                            }
+                                        }
+                                    }
                                 </script>
                             </div>
                         </div>
@@ -128,7 +152,7 @@
                             <div class="card-body">
                                 {% if objs %}
                                     {% for i in objs %}
-                                        <div class="abcd {{i.owner}}">
+                                        <div class="abcd {{i.owner.id}}">
                                             {% if type_of_user %}
                                                 {% if request.user.is_superuser %}
                                                     {% if i.apartment_count %}

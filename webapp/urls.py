@@ -50,4 +50,9 @@ urlpatterns = [
     path("check-download-allowed/<int:id>",views.check_download_allowed),
     path("check-delete-allowed/<int:id>/<str:type_of>",views.check_delete_allowed),
 
+    path("receive-invoice/<int:id>",views.receive_invoice,name="receive-invoice"),
+    path("change-tenant/<int:id>/<int:sel>",views.change_tenant,name="change-tenant"),
+
+    path("invoices-hist/<int:id>",views.invoices_hist,name="invoices-hist"),
+    path("maintenance-invoices-hist/<int:id>",views.maintenance_invoices_hist,name="maintenance-invoices-hist"),
 ]
