@@ -37,12 +37,14 @@ urlpatterns = [
 
     path("print-invoice/<int:id>",views.print_invoice,name="print-invoice"),
     path("delete-invoice/<int:id>",views.delete_invoice,name="delete-invoice"),
+    path("actual-delete-invoice/<int:id>",views.actual_delete_invoice,name="actual-delete-invoice"),
 
     path("owner-invoices/<str:id>",views.owner_invoices,name="owner-invoices"),
 
     path("maintenance-invoices/<int:id>",views.maintenance_invoices,name="maintenance-invoices"),
     path("new-maintenance-invoice-form/<int:id>",views.maintenance_invoice_form,name="maintenance-invoice-form"),
     path("delete-maintenance-invoice/<int:id>",views.delete_maintenance_invoice,name="delete-maintenance-invoice"),
+    path("actual-delete-maintenance-invoice/<int:id>",views.actual_delete_maintenance_invoice,name="actual-delete-maintenance-invoice"),
     path("owner-maintenance-invoices/<str:id>",views.owner_maintenance_invoices,name="owner-maintenance-invoices"),
 
     path("owner-report/<int:id>",views.owner_report,name="owner-report"),
@@ -51,8 +53,13 @@ urlpatterns = [
     path("check-delete-allowed/<int:id>/<str:type_of>",views.check_delete_allowed),
 
     path("receive-invoice/<int:id>",views.receive_invoice,name="receive-invoice"),
-    path("change-tenant/<int:id>/<int:sel>",views.change_tenant,name="change-tenant"),
 
-    path("invoices-hist/<int:id>",views.invoices_hist,name="invoices-hist"),
-    path("maintenance-invoices-hist/<int:id>",views.maintenance_invoices_hist,name="maintenance-invoices-hist"),
+    path("deleted-invoices",views.deleted_invoices,name="deleted-invoices"),
+    path("deleted-maintenance-invoices",views.deleted_maintenance_invoices,name="deleted-maintenance-invoices"),
+
+    path("new-tenant-form/<int:id>/<str:sel>",views.new_tenant_form,name="new-tenant-form"),
+    path("previous-tenants/<int:id>/<str:sel>",views.previous_tenants,name="previous-tenants"),
+    path("tenant-invoices/<int:aid>/<int:id>",views.tenant_invoices,name="tenant-invoices"),
+    path("tenant-maintenance-invoices/<int:aid>/<int:id>",views.tenant_maintenance_invoices,name="tenant-maintenance-invoices"),
+
 ]

@@ -35,56 +35,10 @@
             <br><br>
             <div class="container">
                 <div class="row justify-content-center">
-                    <div class="col-lg-3">
+                    <div class="col-lg-12">
                         <div class="card">
                             <div class="card-head text-center">
-                                Apartment Details
-                            </div>
-                            <div class="card-body">
-                                {% if message %}
-                                    <div class="alert alert-danger" role="alert">
-                                        {{message}}
-                                    </div>
-                                {% endif %}
-                                <form method="post" action="{% url 'edit-apartment-form' aobj.id %}">{% csrf_token %}
-                                    <input type="number" class="form-control" required name="num" placeholder="Enter The Apartment Number" value="{{aobj.aprt_number}}" {% if not type_of_user %}readonly{% endif %}><br>
-                                    <input type="text" class="form-control" required name="name" placeholder="Enter The Name Of Apartment" value="{{aobj.name}}" {% if not type_of_user %}readonly{% endif %}><br>
-                                    <input type="number" class="form-control" required name="phone" placeholder="Enter Phone Number" value="{{aobj.phone_nmber}}" {% if not type_of_user %}readonly{% endif %}><br>
-                                    <select class="form-control" required name="type_of" {% if not type_of_user %}readonly{% endif %}>
-                                        <option {% if aobj.type_of == 'Apartment' %}selected{% endif %} >Apartment</option>
-                                        <option {% if aobj.type_of == 'Home' %}selected{% endif %} >Home</option>
-                                        <option {% if aobj.type_of == 'Floor' %}selected{% endif %} >Floor</option>
-                                        <option {% if aobj.type_of == 'Store' %}selected{% endif %} >Store</option>
-                                        <option {% if aobj.type_of == 'Studio' %}selected{% endif %} >Studio</option>
-                                    </select><br>
-                                    <label>Date Of Birth</label><br>
-                                    <input type="date" class="form-control" required name="dob" placeholder="Enter Date Of Birth" value="{{date_dis}}" {% if not type_of_user %}readonly{% endif %}><br>
-                                    <input type="number" class="form-control" required name="cnum" placeholder="Enter Contract Number" value="{{aobj.contract_number}}" {% if not type_of_user %}readonly{% endif %}><br>
-                                    <input type="number" class="form-control" required name="enum" placeholder="Enter Elect Number" value="{{aobj.elect_number}}" {% if not type_of_user %}readonly{% endif %}><br>
-                                    <label>Comments</label>
-                                    <textarea class="form-control" required name="note" {% if not type_of_user %}readonly{% endif %}>{{aobj.note}} </textarea><br>
-                                    {% if type_of_user %}
-                                        <button class="btn btn-primary text-center" type="submit">
-                                            Save Changes
-                                        </button>
-                                    {% endif %}
-                                    <br><br>
-                                    <button class="btn btn-primary" onclick="window.location.href='/new-tenant-form/{{aobj.id}}/i'" type="button">
-                                        Add New Tenant
-                                    </button>
-                                    <br><br>
-                                    <button class="btn btn-primary" onclick="window.location.href='/previous-tenants/{{aobj.id}}/i'" type="button">
-                                        Tenant History
-                                    </button>
-                                    <br>
-                                </form>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-lg-9">
-                        <div class="card">
-                            <div class="card-head text-center">
-                                <a href="{% url 'apartments' aobj.building.id %}"><-Back</a>&ensp;&ensp;&ensp; Building - {{aobj.building.name}} &ensp; Apartment - {{aobj.aprt_number}} {% if aobj.tenant %}&ensp; Tenant - {{aobj.tenant.name}}{% endif %}<br><br>
+                                <a href="{% url 'home' %}"><-Back</a>
 
                                 <form method="post" id="sort-form">{% csrf_token %}</form>
                                 <div class="form-inline">
@@ -102,6 +56,8 @@
                                 {% if objs %}
                                     <table class="table">
                                         <tr>
+                                            <td>Building</td>
+                                            <td>Apartment</td>
                                             <td>Remain</td>
                                             <td>To</td>
                                             <td>From</td>
@@ -114,6 +70,8 @@
                                         </tr>
                                         {% for i in objs %}
                                             <tr>
+                                                <td>{{i.apartment.building.name}}</td>
+                                                <td>{{i.apartment.aprt_number}}</td>
                                                 <td>{{i.remaining_amount}}</td>
                                                 <td>{{i.to_date | date:'d-m-y'}}</td>
                                                 <td>{{i.from_date | date:'d-m-y'}}</td>
@@ -124,23 +82,18 @@
                                                 <td>{{i.received_by}}</td>
                                                 <td><a onclick="confirm_receive('{% url 'receive-invoice' i.id %}','{{i.amount}}','{{i.user.username}}')" title="Receive" href="#">Receive</a>
                                                     <a href="{% url 'print-invoice' i.id %}" target="_blank">Print</a>&ensp; {% if request.user.is_superuser %}
-                                                    <a onclick="confirm_delete('{% url 'delete-invoice' i.id %}')" title="Delete"><span class="fa text-danger fa-lg fa-remove"></span></a>
-                                                {% endif %}</td>
+                                                    <a onclick="confirm_delete('{% url 'actual-delete-invoice' i.id %}')" title="Delete"><span class="fa text-danger fa-lg fa-remove"></span></a>
+                                                    {% endif %}</td>
                                             </tr>
                                         {% endfor %}
                                     </table>
                                 {% else %}
-                                    <a>This Apartments Has No Invoices Right Now.</a>
+                                    <a>No Deleted Invoices Right Now.</a>
                                 {% endif %}
                             </div>
                             <div class="card-footer">
                                 <div class="row justify-content-around">
                                     <div class="col-lg-8">
-                                        {% if type_of_user or write_priv %}
-                                            <button class="btn btn-primary" type="button" onclick="window.location.href='/new-invoice-form/{{aobj.id}}'">
-                                                Add New Invoice For This Apartment
-                                            </button>    
-                                        {% endif %}
                                     </div>
                                     {% if request.user.is_superuser %}
                                         <div class="col-lg-2">

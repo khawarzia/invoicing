@@ -14,7 +14,7 @@
         <body>
             <script>
                 function confirm_delete(a){
-                    temp = a.split("delete-invoice/")[1];
+                    temp = a.split("delete-maintenance-invoice/")[1];
                     $.get('/check-delete-allowed/'+temp+'/m', function (data){
                         if (data['check']){
                             if (confirm("Are you sure you want to delete this?")){

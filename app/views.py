@@ -189,7 +189,7 @@ def edit_apartment_form(request,id):
             else:
                 context['message'] = "Entered data is not valid."
         obj = apartment.objects.filter(pk=id)[0]
-        objs = invoice.objects.filter(apartment=obj)
+        objs = invoice.objects.filter(is_deleted=False,apartment=obj)
         context['aobj'] = obj
         context['objs'] = objs
         return render(request,template,context)
@@ -224,11 +224,11 @@ def invoices(request,id):
         if request.method == "POST" and request.POST['asc_desc'] in ("0","1"):
             context["order"] = request.POST['asc_desc']
             if request.POST["asc_desc"] == "0":
-                objs = invoice.objects.filter(apartment=aobj,tenant=aobj.curr_tenant).order_by("today_date")
+                objs = invoice.objects.filter(is_deleted=False,apartment=aobj).order_by("today_date")
             else:
-                objs = invoice.objects.filter(apartment=aobj,tenant=aobj.curr_tenant).order_by("-today_date")
+                objs = invoice.objects.filter(is_deleted=False,apartment=aobj).order_by("-today_date")
         else:
-            objs = invoice.objects.filter(apartment=aobj,tenant=aobj.curr_tenant)
+            objs = invoice.objects.filter(is_deleted=False,apartment=aobj)
         context['aobj'] = aobj
         context['date_dis'] = aobj.dob.strftime("%Y-%m-%d")
         context['objs'] = objs
@@ -241,7 +241,7 @@ def invoice_form(request,id):
     if id:
         template = "new_invoice_form.html"
         context = {'id':id}
-        objs = reversed(list(invoice.objects.filter(apartment=apartment.objects.get(pk=id))))
+        objs = reversed(list(invoice.objects.filter(is_deleted=False,apartment=apartment.objects.get(pk=id))))
         temp = []
         temp1 = []
         tempcount = 0
@@ -272,9 +272,10 @@ def invoice_form(request,id):
                 if request.POST['note']:
                     obj.note = request.POST['note']
                 obj.save()
-                temp_len_inv = len(invoice.objects.filter(owner=obj.owner))
+                obj.tenant = obj.apartment.tenant
+                temp_len_inv = len(invoice.objects.filter(is_deleted=False,owner=obj.owner))
                 if temp_len_inv > 0:
-                    obj.invoice_number = invoice.objects.filter(owner=obj.owner).order_by("-invoice_number")[0].invoice_number + 1
+                    obj.invoice_number = invoice.objects.filter(is_deleted=False,owner=obj.owner).order_by("-invoice_number")[0].invoice_number + 1
                 obj.save()
                 return redirect("/invoices/{}".format(id))
             else:
@@ -448,8 +449,21 @@ def delete_invoice(request,id):
     obj = invoice.objects.get(pk=id)
     try:
         tempId = obj.apartment.id
-        obj.delete()
+        obj.is_deleted = True
+        obj.save()
         return redirect("/invoices/{}".format(tempId))
+    except:
+        obj.is_deleted = True
+        obj.save()
+        return redirect('/home')
+    
+@login_required(login_url='/')
+def actual_delete_invoice(request,id):
+    obj = invoice.objects.get(pk=id)
+    try:
+        tempId = obj.apartment.id
+        obj.delete()
+        return redirect("/deleted-invoices")
     except:
         obj.delete()
         return redirect('/home')
@@ -468,40 +482,40 @@ def owner_invoices(request,id):
             context["order"] = request.POST['asc_desc']
             if request.POST["asc_desc"] == "0":
                 if id != "x":
-                    objs = invoice.objects.filter(owner__id=int(id)).order_by("today_date")
+                    objs = invoice.objects.filter(is_deleted=False,owner__id=int(id)).order_by("today_date")
                 else:
                     if obj.type_of_user in ('v','w'):
-                        temp2 = invoice.objects.all().order_by("today_date")
+                        temp2 = invoice.objects.filter(is_deleted=False).order_by("today_date")
                         objs = []
                         for i in temp2:
                             if i.owner in obj.invoice_owner_allowed.all():
                                 objs.append(i)
                     else:
-                        objs = invoice.objects.all().order_by("today_date")
+                        objs = invoice.objects.filter(is_deleted=False).order_by("today_date")
             else:
                 if id != "x":
-                    objs = invoice.objects.filter(owner__id=int(id)).order_by("-today_date")
+                    objs = invoice.objects.filter(is_deleted=False,owner__id=int(id)).order_by("-today_date")
                 else:
                     if obj.type_of_user in ('v','w'):
-                        temp2 = invoice.objects.all().order_by("-today_date")
+                        temp2 = invoice.objects.filter(is_deleted=False).order_by("-today_date")
                         objs = []
                         for i in temp2:
                             if i.owner in obj.invoice_owner_allowed.all():
                                 objs.append(i)
                     else:
-                        objs = invoice.objects.all().order_by("-today_date")
+                        objs = invoice.objects.filter(is_deleted=False).order_by("-today_date")
         else:
             if id != "x":
-                objs = invoice.objects.filter(owner__id=int(id))
+                objs = invoice.objects.filter(is_deleted=False,owner__id=int(id))
             else:
                 if obj.type_of_user in ('v','w'):
-                    temp2 = invoice.objects.all()
+                    temp2 = invoice.objects.filter(is_deleted=False)
                     objs = []
                     for i in temp2:
                         if i.owner in obj.invoice_owner_allowed.all():
                             objs.append(i)
                 else:
-                    objs = invoice.objects.all()
+                    objs = invoice.objects.filter(is_deleted=False)
 
         context['objs'] = objs
         if obj.type_of_user in ('v','w'):
@@ -533,11 +547,11 @@ def maintenance_invoices(request,id):
         if request.method == "POST" and request.POST['asc_desc'] in ("0","1"):
             context["order"] = request.POST['asc_desc']
             if request.POST["asc_desc"] == "0":
-                objs = maintenance_invoice.objects.filter(apartment=aobj,tenant=aobj.curr_tenant).order_by("today_date")
+                objs = maintenance_invoice.objects.filter(is_deleted=False,apartment=aobj).order_by("today_date")
             else:
-                objs = maintenance_invoice.objects.filter(apartment=aobj,tenant=aobj.curr_tenant).order_by("-today_date")
+                objs = maintenance_invoice.objects.filter(is_deleted=False,apartment=aobj).order_by("-today_date")
         else:
-            objs = maintenance_invoice.objects.filter(apartment=aobj,tenant=aobj.curr_tenant)
+            objs = maintenance_invoice.objects.filter(is_deleted=False,apartment=aobj)
         context['aobj'] = aobj
         context['date_dis'] = aobj.dob.strftime("%Y-%m-%d")
         context['objs'] = objs
@@ -550,7 +564,7 @@ def maintenance_invoice_form(request,id):
     if id:
         template = "new_maintenance_invoice_form.html"
         context = {'id':id}
-        objs = reversed(list(maintenance_invoice.objects.filter(apartment=apartment.objects.get(pk=id)).order_by("-today_date")))
+        objs = reversed(list(maintenance_invoice.objects.filter(is_deleted=False,apartment=apartment.objects.get(pk=id)).order_by("-today_date")))
         temp = []
         temp1 = []
         tempcount = 0
@@ -571,9 +585,10 @@ def maintenance_invoice_form(request,id):
                 if request.POST['note']:
                     obj.note = request.POST['note']
                 obj.save()
-                temp_len_inv = len(maintenance_invoice.objects.filter(owner=obj.owner))
+                obj.tenant = obj.apartment.tenant
+                temp_len_inv = len(maintenance_invoice.objects.filter(is_deleted=False,owner=obj.owner))
                 if temp_len_inv > 0:
-                    obj.invoice_number = maintenance_invoice.objects.filter(owner=obj.owner).order_by("-invoice_number")[0].invoice_number + 1
+                    obj.invoice_number = maintenance_invoice.objects.filter(is_deleted=False,owner=obj.owner).order_by("-invoice_number")[0].invoice_number + 1
                 obj.save()
                 return redirect("/maintenance-invoices/{}".format(id))
             else:
@@ -587,8 +602,21 @@ def delete_maintenance_invoice(request,id):
     obj = maintenance_invoice.objects.get(pk=id)
     try:
         tempId = obj.apartment.id
+        obj.is_deleted = True
+        obj.save()
+        return redirect("/maintenance-invoices/{}".format(tempId))
+    except:
+        obj.is_deleted = True
+        obj.save()
+        return redirect('/home')
+    
+@login_required(login_url='/')
+def actual_delete_maintenance_invoice(request,id):
+    obj = maintenance_invoice.objects.get(pk=id)
+    try:
+        tempId = obj.apartment.id
         obj.delete()
-        return redirect("/invoices/{}".format(tempId))
+        return redirect("/deleted-maintenance-invoices")
     except:
         obj.delete()
         return redirect('/home')
@@ -607,51 +635,51 @@ def owner_maintenance_invoices(request,id):
             context["order"] = request.POST['asc_desc']
             if request.POST["asc_desc"] == "0":
                 if id != "x":
-                    objs = maintenance_invoice.objects.filter(owner__id=int(id)).order_by("today_date")
+                    objs = maintenance_invoice.objects.filter(is_deleted=False,owner__id=int(id)).order_by("today_date")
                 else:
                     if obj.type_of_user in ('v','w'):
-                        temp2 = maintenance_invoice.objects.all().order_by("today_date")
+                        temp2 = maintenance_invoice.objects.filter(is_deleted=False).order_by("today_date")
                         objs = []
                         for i in temp2:
                             if i.owner in obj.invoice_owner_allowed.all():
                                 objs.append(i)
                     else:
-                        objs = maintenance_invoice.objects.all().order_by("today_date")
+                        objs = maintenance_invoice.objects.filter(is_deleted=False).order_by("today_date")
             else:
                 if id != "x":
-                    objs = maintenance_invoice.objects.filter(owner__id=int(id)).order_by("-today_date")
+                    objs = maintenance_invoice.objects.filter(is_deleted=False,owner__id=int(id)).order_by("-today_date")
                 else:
                     if obj.type_of_user in ('v','w'):
-                        temp2 = maintenance_invoice.objects.all().order_by("-today_date")
+                        temp2 = maintenance_invoice.objects.filter(is_deleted=False).order_by("-today_date")
                         objs = []
                         for i in temp2:
                             if i.owner in obj.invoice_owner_allowed.all():
                                 objs.append(i)
                     else:
-                        objs = maintenance_invoice.objects.all().order_by("-today_date")
+                        objs = maintenance_invoice.objects.filter(is_deleted=False).order_by("-today_date")
         else:
             if id != "x":
-                objs = maintenance_invoice.objects.filter(owner__id=int(id))
+                objs = maintenance_invoice.objects.filter(is_deleted=False,owner__id=int(id))
             else:
                 if obj.type_of_user in ('v','w'):
-                    temp2 = maintenance_invoice.objects.all()
+                    temp2 = maintenance_invoice.objects.filter(is_deleted=False)
                     objs = []
                     for i in temp2:
                         if i.owner in obj.invoice_owner_allowed.all():
                             objs.append(i)
                 else:
-                    objs = maintenance_invoice.objects.all()
+                    objs = maintenance_invoice.objects.filter(is_deleted=False)
 
         context['objs'] = objs
         if obj.type_of_user in ('v','w'):
-            temp2 = maintenance_invoice.objects.all()
+            temp2 = maintenance_invoice.objects.filter(is_deleted=False)
             temp2_list = []
             for i in temp2:
                 if i in obj.invoice_owner_allowed.all():
                     temp2_list.append(i)
             context['owners'] = temp2_list
         else:
-            context['owners'] = maintenance_invoice.objects.all()
+            context['owners'] = maintenance_invoice.objects.filter(is_deleted=False)
         return render(request,template,context)
     else:
         return redirect('/home')
@@ -670,8 +698,8 @@ def owner_report(request,id):
     to_date = datetime.date(year=int(to_date[0]),month=int(to_date[1]),day=int(to_date[2]))
 
     owner_obj = invoice_owner.objects.get(pk=id)
-    invoice_objs = invoice.objects.filter(owner=owner_obj,today_date__gte=from_date,today_date__lte=to_date).order_by("today_date")
-    maintenance_objs = maintenance_invoice.objects.filter(owner=owner_obj,today_date__gte=from_date,today_date__lte=to_date).order_by("today_date")
+    invoice_objs = invoice.objects.filter(is_deleted=False,owner=owner_obj,today_date__gte=from_date,today_date__lte=to_date).order_by("today_date")
+    maintenance_objs = maintenance_invoice.objects.filter(is_deleted=False,owner=owner_obj,today_date__gte=from_date,today_date__lte=to_date).order_by("today_date")
 
     offset = 0
     for i in range(1,32):
@@ -699,7 +727,7 @@ def owner_report(request,id):
                 cell = worksheet.cell(row=r,column=limits['col_start']+3)
                 cell.value = j.amount
             cell = worksheet.cell(row=r,column=limits['col_start']+4)
-            cell.value = j.id
+            cell.value = j.invoice_number
 
         main_data = []
         for j in maintenance_objs:
@@ -763,69 +791,115 @@ def receive_invoice(request,id):
     obj.received_by = request.user.username
     obj.save()
     return redirect('/invoices/{}'.format(obj.apartment.id))
-
-@login_required(login_url='/')
-def change_tenant(request,id,sel):
-    obj = apartment.objects.get(pk=id)
-
-    tobj = prev_tenants()
-    tobj.name = obj.curr_tenant
-    tobj.save()
-
-    obj.tenant_hist.add(tobj)
-    obj.curr_tenant = request.POST['tenant']
-    obj.save()
-
-    if sel == 0:
-        return redirect('/invoices/{}'.format(id))
-    else:
-        return redirect('/maintenance-invoices/{}'.format(id))
     
 @login_required(login_url='/')
-def invoices_hist(request,id):
+def deleted_invoices(request):
+    template = "deleted_invoices.html"
+    context = {}
+    
+    if request.method == "POST" and request.POST['asc_desc'] in ("0","1"):
+        context["order"] = request.POST['asc_desc']
+        if request.POST["asc_desc"] == "0":
+            objs = invoice.objects.filter(is_deleted=True).order_by("today_date")
+        else:
+            objs = invoice.objects.filter(is_deleted=True).order_by("-today_date")
+    else:
+        objs = invoice.objects.filter(is_deleted=True)
+
+    context['objs'] = objs
+    return render(request,template,context)
+
+@login_required(login_url='/')
+def deleted_maintenance_invoices(request):
+    template = "deleted_maintenance_invoices.html"
+    context = {}
+    if request.method == "POST" and request.POST['asc_desc'] in ("0","1"):
+        context["order"] = request.POST['asc_desc']
+        if request.POST["asc_desc"] == "0":
+            objs = maintenance_invoice.objects.filter(is_deleted=True).order_by("today_date")
+        else:
+            objs = maintenance_invoice.objects.filter(is_deleted=True).order_by("-today_date")
+    else:
+        objs = maintenance_invoice.objects.filter(is_deleted=True)
+
+    context['objs'] = objs
+    return render(request,template,context)
+
+@login_required(login_url='/')
+def new_tenant_form(request,id,sel):
     if id:
-        template = "apartments_invoice.html"
-        context = {}
-        obj = get_user_profile(request.user)
-        
-        context['type_of_user'] = obj.type_of_user == 'd'
-        context['write_priv'] = obj.type_of_user == 'w'
+        template = "new_tenant_form.html"
+        context = {'id':id,'sel':sel}
+        if request.method == "POST":
+            if request.POST['name'] and request.POST['phone'] and request.POST['contract'] and request.POST['elec']:
+                obj = aprt_tenant()
+                obj.name = request.POST['name']
+                obj.phone_number = int(request.POST['phone'])
+                obj.contract_number = int(request.POST['contract'])
+                obj.electric_number = int(request.POST['elec'])
+                obj.save()
+
+                aobj = apartment.objects.get(pk=id)
+                aobj.tenant = obj
+                aobj.tenant_hist.add(obj)
+                aobj.save()
+                if sel == "i":
+                    return redirect("/invoices/{}".format(id))
+                else:
+                    return redirect("/maintenance-invoices/{}".format(id))
+            else:
+                context['message'] = "Entered data is not valid."
+        return render(request,template,context)
+    else:
+        return redirect("/home")
+    
+@login_required(login_url='/')
+def previous_tenants(request,id,sel):
+    if id:
+        template = "tenants.html"
+        context = {"sel":sel}
         aobj = apartment.objects.get(pk=id)
+        context['aobj'] = aobj
+        context['objs'] = aobj.tenant_hist.all()
+        return render(request,template,context)
+    else:
+        return redirect("/home")
+    
+@login_required(login_url='/')
+def tenant_invoices(request,aid,id):
+    if id:
+        template = "tenant_invoice.html"
+        context = {}
+        aobj = apartment.objects.get(pk=aid)
         if request.method == "POST" and request.POST['asc_desc'] in ("0","1"):
             context["order"] = request.POST['asc_desc']
             if request.POST["asc_desc"] == "0":
-                objs = invoice.objects.filter(apartment=aobj,tenant=request.POST['ten']).order_by("today_date")
+                objs = invoice.objects.filter(is_deleted=False,apartment=aobj,tenant__id=id).order_by("today_date")
             else:
-                objs = invoice.objects.filter(apartment=aobj,tenant=request.POST['ten']).order_by("-today_date")
+                objs = invoice.objects.filter(is_deleted=False,apartment=aobj,tenant__id=id).order_by("-today_date")
         else:
-            objs = invoice.objects.filter(apartment=aobj,tenant=request.POST['ten'])
+            objs = invoice.objects.filter(is_deleted=False,apartment=aobj,tenant__id=id)
         context['aobj'] = aobj
-        context['date_dis'] = aobj.dob.strftime("%Y-%m-%d")
         context['objs'] = objs
         return render(request,template,context)
     else:
         return redirect('/home')
     
 @login_required(login_url='/')
-def maintenance_invoices_hist(request,id):
+def tenant_maintenance_invoices(request,aid,id):
     if id:
-        template = "apartments_maintenance_invoice.html"
+        template = "tenant_maintenance_invoice.html"
         context = {}
-        obj = get_user_profile(request.user)
-        
-        context['type_of_user'] = obj.type_of_user == 'd'
-        context['write_priv'] = obj.type_of_user == 'w'
-        aobj = apartment.objects.get(pk=id)
+        aobj = apartment.objects.get(pk=aid)
         if request.method == "POST" and request.POST['asc_desc'] in ("0","1"):
             context["order"] = request.POST['asc_desc']
             if request.POST["asc_desc"] == "0":
-                objs = maintenance_invoice.objects.filter(apartment=aobj,tenant=request.POST['ten']).order_by("today_date")
+                objs = maintenance_invoice.objects.filter(is_deleted=False,apartment=aobj,tenant__id=id).order_by("today_date")
             else:
-                objs = maintenance_invoice.objects.filter(apartment=aobj,tenant=request.POST['ten']).order_by("-today_date")
+                objs = maintenance_invoice.objects.filter(is_deleted=False,apartment=aobj,tenant__id=id).order_by("-today_date")
         else:
-            objs = maintenance_invoice.objects.filter(apartment=aobj,tenant=request.POST['ten'])
+            objs = maintenance_invoice.objects.filter(is_deleted=False,apartment=aobj,tenant__id=id)
         context['aobj'] = aobj
-        context['date_dis'] = aobj.dob.strftime("%Y-%m-%d")
         context['objs'] = objs
         return render(request,template,context)
     else:

@@ -170,6 +170,21 @@
                                 {% endif %}
                             </div>
                             <div class="card-footer">
+                                {% if request.user.is_superuser %}
+                                <div class="row justify-content-around">
+                                    <div class="col-lg-6">
+                                        <a href="{% url 'deleted-invoices' %}">
+                                            Deleted Invoices
+                                        </a>
+                                    </div>
+                                    <div class="col-lg-6">
+                                        <a href="{% url 'deleted-maintenance-invoices' %}">
+                                            Deleted Maintenance Invoices
+                                        </a>
+                                    </div>
+                                </div>
+                                <br>
+                                {% endif %}
                                 <div class="row justify-content-around">
                                     <div class="col-lg-8">
                                         {% if type_of_user %}

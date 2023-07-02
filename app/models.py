@@ -14,8 +14,11 @@ class invoice_owner(models.Model):
     def __str__(self):
         return self.name
     
-class prev_tenants(models.Model):
-    name = models.CharField(max_length=300,null=True,blank=True)
+class aprt_tenant(models.Model):
+    name = models.CharField(max_length=400,null=True,blank=True)
+    phone_number = models.IntegerField(default=0)
+    electric_number = models.IntegerField(default=0)
+    contract_number = models.IntegerField(default=0)
 
     def __str__(self):
         return self.name
@@ -23,8 +26,6 @@ class prev_tenants(models.Model):
 class user_profile(models.Model):
     user = models.ForeignKey(User,on_delete=models.CASCADE)
     type_of_user = models.CharField(max_length=20,choices=type_of_user_choices,default='d')
-    #download_report_allowed = models.BooleanField(default=True)
-    #delete_invoice_allowed = models.BooleanField(default=True)
     invoice_owner_allowed = models.ManyToManyField(invoice_owner,blank=True)
 
     def __str__(self):
@@ -60,8 +61,8 @@ class apartment(models.Model):
     temp_del = models.BooleanField(default=False)
     temp_del_date = models.DateField(null=True,blank=True)
 
-    curr_tenant = models.CharField(max_length=300,null=True,blank=True,default="default")
-    tenant_hist = models.ManyToManyField(prev_tenants)
+    tenant = models.ForeignKey(aprt_tenant,on_delete=models.SET_NULL,null=True,blank=True)
+    tenant_hist = models.ManyToManyField(aprt_tenant,related_name="tenant_history")
 
     def __str__(self):
         return self.building.name + " - " + self.aprt_number
@@ -113,7 +114,9 @@ class invoice(models.Model):
 
     invoice_number = models.IntegerField(default=0)
 
-    tenant = models.CharField(max_length=300,null=True,blank=True,default="default")
+    is_deleted = models.BooleanField(default=False)
+
+    tenant = models.ForeignKey(aprt_tenant,on_delete=models.SET_NULL,null=True,blank=True)
 
     def __str__(self):
         return self.apartment.building.name + " - " + self.apartment.aprt_number + " - {}".format(self.id)
@@ -127,8 +130,10 @@ class maintenance_invoice(models.Model):
     note = models.TextField(max_length=2000,null=True,blank=True)
 
     invoice_number = models.IntegerField(default=0)
-
-    tenant = models.CharField(max_length=300,null=True,blank=True,default="default")
     
+    is_deleted = models.BooleanField(default=False)
+
+    tenant = models.ForeignKey(aprt_tenant,on_delete=models.SET_NULL,null=True,blank=True)
+
     def __str__(self):
         return self.apartment.building.name + " - " + self.apartment.aprt_number + " - {}".format(self.id)

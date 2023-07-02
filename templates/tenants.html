@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+    <html lang="en">
+
+        <head>
+            <title>Building Management - Maintenance Invoices</title>
+            <meta charset="utf-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1">
+            <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css">
+            <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+            <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js"></script>
+            <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css"> 
+        </head>
+        
+        <body>
+            <br><br>
+            <div class="container">
+                <div class="row justify-content-center">
+                    <div class="col-lg-12">
+                        <div class="card">
+                            <div class="card-head text-center">
+                                {% if sel == 'i' %}
+                                    <a href="{% url 'invoices' aobj.id %}"><-Back</a>&ensp;&ensp;&ensp; Building - {{aobj.building.name}} &ensp; Apartment - {{aobj.aprt_number}} <br><br>
+                                {% else %}
+                                    <a href="{% url 'maintenance-invoices' aobj.id %}"><-Back</a>&ensp;&ensp;&ensp; Building - {{aobj.building.name}} &ensp; Apartment - {{aobj.aprt_number}} <br><br>
+                                {% endif %}
+                            </div>
+                            <div class="card-body">
+                                {% if objs %}
+                                    <table class="table">
+                                        <tr>
+                                            <td>Name</td>
+                                            <td>Phone Number</td>
+                                            <td>Contract Number</td>
+                                            <td>Electric Number</td>
+                                            <td>Actions</td>
+                                        </tr>
+                                        {% for i in objs %}
+                                            <tr>
+                                                <td>{{i.name}}</td>
+                                                <td>{{i.phone_number}}</td>
+                                                <td>{{i.contract_number}}</td>
+                                                <td>{{i.electric_number}}</td>
+                                                <td>
+                                                    {% if sel == 'i' %}
+                                                        <a href="{% url 'tenant-invoices' aobj.id i.id %}" title="Show Invoices">Show Invoices</a>
+                                                    {% else %}
+                                                        <a href="{% url 'tenant-maintenance-invoices' aobj.id i.id %}" title="Show Invoices">Show Invoices</a>
+                                                    {% endif %}
+                                                </td>
+                                            </tr>
+                                        {% endfor %}
+                                    </table>
+                                {% else %}
+                                    <a>This Apartments Has No Previous Tenants.</a>
+                                {% endif %}
+                            </div>
+                            <div class="card-footer">
+                                <div class="row justify-content-around">
+                                    <div class="col-lg-8">
+                                    </div>
+                                    {% if request.user.is_superuser %}
+                                        <div class="col-lg-2">
+                                            <a href="/admin">
+                                                Admin
+                                            </a>
+                                        </div>
+                                    {% endif %}
+                                    <div class="col-lg-2">
+                                        <a href="{% url 'logout' %}">
+                                            Logout
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </body>
+
+    
+    </html>
