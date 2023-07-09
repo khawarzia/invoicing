@@ -53,6 +53,7 @@ class apartment(models.Model):
     temp_del_date = models.DateField(null=True,blank=True)
 
     aprt_link = models.ForeignKey("tenant_link",on_delete=models.SET_NULL,blank=True,null=True)
+    new_tenant_added = models.BooleanField(default=False)
 
     def __str__(self):
         return self.building.name + " - " + self.aprt_number

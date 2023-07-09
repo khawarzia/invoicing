@@ -104,8 +104,8 @@ def apartments(request,id):
         obj = get_user_profile(request.user)
         context['type_of_user'] = obj.type_of_user == 'd'
         building_obj = building.objects.get(pk=id)
-        objs = apartment.objects.filter(building=building_obj,temp_del=False)
-        del_objs = apartment.objects.filter(building=building_obj,temp_del=True)
+        objs = apartment.objects.filter(building=building_obj,temp_del=False,new_tenant_added=False)
+        del_objs = apartment.objects.filter(building=building_obj,temp_del=True,new_tenant_added=False)
         temp_del_objs = []
         for i in del_objs:
             day_diff = datetime.date.today() - i.temp_del_date
@@ -167,6 +167,8 @@ def apartment_form(request,id,prev_id):
                     linkobj = tenant_link()
                     linkobj.save()
                 else:
+                    aobj.new_tenant_added = True
+                    aobj.save()
                     linkobj = aobj.aprt_link
                     if (None == linkobj):
                         tempobj = tenant_link()
