@@ -28,7 +28,7 @@ urlpatterns = [
     path("delete-building/<int:id>",views.delete_building,name="delete-building"),
 
     path("apartments/<int:id>",views.apartments,name="apartments"),
-    path("new-apartment-form/<int:id>",views.apartment_form,name="apartment-form"),
+    path("new-apartment-form/<int:id>/<str:prev_id>",views.apartment_form,name="apartment-form"),
     path("edit-apartment-form/<int:id>",views.edit_apartment_form,name="edit-apartment-form"),
     path("delete-apartment/<int:id>",views.delete_apartment,name="delete-apartment"),
 

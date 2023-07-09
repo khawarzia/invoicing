@@ -26,7 +26,7 @@
                                     </div>
                                 {% endif %}
                                 <form method="post">{% csrf_token %}
-                                    <input type="number" class="form-control" required name="num" placeholder="Enter The Apartment Number"><br>
+                                    <input type="number" class="form-control" required name="num" placeholder="Enter The Apartment Number" {% if aobj %} value="{{aobj.aprt_number}}" readonly {% endif %}><br>
                                     <input type="text" class="form-control" required name="name" placeholder="Enter The Name Of Apartment"><br>
                                     <input type="number" class="form-control" required name="phone" placeholder="Enter Phone Number"><br>
                                     <select class="form-control" required name="type_of">

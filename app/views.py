@@ -142,10 +142,13 @@ def apartments(request,id):
         return redirect('/home')
 
 @login_required(login_url='/')
-def apartment_form(request,id):
+def apartment_form(request,id,prev_id):
     if id:
         template = "new_apartment_form.html"
         context = {'id':id}
+        if prev_id != "x":
+            aobj = apartment.objects.get(pk=int(prev_id))
+            context['aobj'] = aobj
         if request.method == "POST":
             if request.POST['name'] and request.POST['num'] and request.POST['phone'] and request.POST['type_of'] and request.POST['dob'] and request.POST['cnum'] and request.POST['enum']:
                 bobj = building.objects.get(pk=id)
@@ -159,6 +162,24 @@ def apartment_form(request,id):
                 obj.contract_number = request.POST['cnum']
                 obj.note = request.POST['note']
                 obj.building = bobj
+                obj.save()
+                if prev_id == "x":
+                    linkobj = tenant_link()
+                    linkobj.save()
+                else:
+                    linkobj = aobj.aprt_link
+                    if (None == linkobj):
+                        tempobj = tenant_link()
+                        tempobj.save()
+                        tempobj.apartments.add(aobj)
+                        tempobj.save()
+                        aobj.aprt_link = tempobj
+                        aobj.save()
+                        linkobj = aobj.aprt_link
+                        
+                linkobj.apartments.add(obj)
+                linkobj.save()
+                obj.aprt_link = linkobj
                 obj.save()
                 return redirect("/apartments/{}".format(id))
             else:
@@ -271,8 +292,6 @@ def invoice_form(request,id):
                 obj.to_date = request.POST['tdate']
                 if request.POST['note']:
                     obj.note = request.POST['note']
-                obj.save()
-                obj.tenant = obj.apartment.tenant
                 temp_len_inv = len(invoice.objects.filter(is_deleted=False,owner=obj.owner))
                 if temp_len_inv > 0:
                     obj.invoice_number = invoice.objects.filter(is_deleted=False,owner=obj.owner).order_by("-invoice_number")[0].invoice_number + 1
@@ -584,8 +603,6 @@ def maintenance_invoice_form(request,id):
                 obj.amount = request.POST['amount']
                 if request.POST['note']:
                     obj.note = request.POST['note']
-                obj.save()
-                obj.tenant = obj.apartment.tenant
                 temp_len_inv = len(maintenance_invoice.objects.filter(is_deleted=False,owner=obj.owner))
                 if temp_len_inv > 0:
                     obj.invoice_number = maintenance_invoice.objects.filter(is_deleted=False,owner=obj.owner).order_by("-invoice_number")[0].invoice_number + 1
@@ -828,28 +845,8 @@ def deleted_maintenance_invoices(request):
 @login_required(login_url='/')
 def new_tenant_form(request,id,sel):
     if id:
-        template = "new_tenant_form.html"
-        context = {'id':id,'sel':sel}
-        if request.method == "POST":
-            if request.POST['name'] and request.POST['phone'] and request.POST['contract'] and request.POST['elec']:
-                obj = aprt_tenant()
-                obj.name = request.POST['name']
-                obj.phone_number = int(request.POST['phone'])
-                obj.contract_number = int(request.POST['contract'])
-                obj.electric_number = int(request.POST['elec'])
-                obj.save()
-
-                aobj = apartment.objects.get(pk=id)
-                aobj.tenant = obj
-                aobj.tenant_hist.add(obj)
-                aobj.save()
-                if sel == "i":
-                    return redirect("/invoices/{}".format(id))
-                else:
-                    return redirect("/maintenance-invoices/{}".format(id))
-            else:
-                context['message'] = "Entered data is not valid."
-        return render(request,template,context)
+        aobj = apartment.objects.get(pk=id)
+        return redirect("/new-apartment-form/{}/{}".format(aobj.building.id,aobj.id))
     else:
         return redirect("/home")
     
@@ -860,7 +857,10 @@ def previous_tenants(request,id,sel):
         context = {"sel":sel}
         aobj = apartment.objects.get(pk=id)
         context['aobj'] = aobj
-        context['objs'] = aobj.tenant_hist.all()
+        try:
+            context['objs'] = aobj.aprt_link.apartments.all()
+        except:
+            context['objs'] = []
         return render(request,template,context)
     else:
         return redirect("/home")
@@ -868,17 +868,18 @@ def previous_tenants(request,id,sel):
 @login_required(login_url='/')
 def tenant_invoices(request,aid,id):
     if id:
+        return redirect("/invoices/{}".format(id))
         template = "tenant_invoice.html"
         context = {}
         aobj = apartment.objects.get(pk=aid)
         if request.method == "POST" and request.POST['asc_desc'] in ("0","1"):
             context["order"] = request.POST['asc_desc']
             if request.POST["asc_desc"] == "0":
-                objs = invoice.objects.filter(is_deleted=False,apartment=aobj,tenant__id=id).order_by("today_date")
+                objs = invoice.objects.filter(is_deleted=False,apartment=aobj).order_by("today_date")
             else:
-                objs = invoice.objects.filter(is_deleted=False,apartment=aobj,tenant__id=id).order_by("-today_date")
+                objs = invoice.objects.filter(is_deleted=False,apartment=aobj).order_by("-today_date")
         else:
-            objs = invoice.objects.filter(is_deleted=False,apartment=aobj,tenant__id=id)
+            objs = invoice.objects.filter(is_deleted=False,apartment=aobj)
         context['aobj'] = aobj
         context['objs'] = objs
         return render(request,template,context)
@@ -888,17 +889,18 @@ def tenant_invoices(request,aid,id):
 @login_required(login_url='/')
 def tenant_maintenance_invoices(request,aid,id):
     if id:
+        return redirect("/maintenance-invoices/{}".format(id))
         template = "tenant_maintenance_invoice.html"
         context = {}
         aobj = apartment.objects.get(pk=aid)
         if request.method == "POST" and request.POST['asc_desc'] in ("0","1"):
             context["order"] = request.POST['asc_desc']
             if request.POST["asc_desc"] == "0":
-                objs = maintenance_invoice.objects.filter(is_deleted=False,apartment=aobj,tenant__id=id).order_by("today_date")
+                objs = maintenance_invoice.objects.filter(is_deleted=False,apartment=aobj).order_by("today_date")
             else:
-                objs = maintenance_invoice.objects.filter(is_deleted=False,apartment=aobj,tenant__id=id).order_by("-today_date")
+                objs = maintenance_invoice.objects.filter(is_deleted=False,apartment=aobj).order_by("-today_date")
         else:
-            objs = maintenance_invoice.objects.filter(is_deleted=False,apartment=aobj,tenant__id=id)
+            objs = maintenance_invoice.objects.filter(is_deleted=False,apartment=aobj)
         context['aobj'] = aobj
         context['objs'] = objs
         return render(request,template,context)

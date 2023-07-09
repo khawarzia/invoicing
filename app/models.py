@@ -13,15 +13,6 @@ class invoice_owner(models.Model):
 
     def __str__(self):
         return self.name
-    
-class aprt_tenant(models.Model):
-    name = models.CharField(max_length=400,null=True,blank=True)
-    phone_number = models.IntegerField(default=0)
-    electric_number = models.IntegerField(default=0)
-    contract_number = models.IntegerField(default=0)
-
-    def __str__(self):
-        return self.name
 
 class user_profile(models.Model):
     user = models.ForeignKey(User,on_delete=models.CASCADE)
@@ -61,8 +52,7 @@ class apartment(models.Model):
     temp_del = models.BooleanField(default=False)
     temp_del_date = models.DateField(null=True,blank=True)
 
-    tenant = models.ForeignKey(aprt_tenant,on_delete=models.SET_NULL,null=True,blank=True)
-    tenant_hist = models.ManyToManyField(aprt_tenant,related_name="tenant_history")
+    aprt_link = models.ForeignKey("tenant_link",on_delete=models.SET_NULL,blank=True,null=True)
 
     def __str__(self):
         return self.building.name + " - " + self.aprt_number
@@ -96,6 +86,10 @@ class apartment(models.Model):
         inv = invs[len(invs) - 1]
         to_date = date(inv.to_date.year,inv.to_date.month,inv.to_date.day)
         return "{}".format(to_date)
+    
+
+class tenant_link(models.Model):
+    apartments = models.ManyToManyField(apartment)
 
 class invoice(models.Model):
     user = models.ForeignKey(User,on_delete=models.SET_NULL,null=True,blank=True)
@@ -116,7 +110,6 @@ class invoice(models.Model):
 
     is_deleted = models.BooleanField(default=False)
 
-    tenant = models.ForeignKey(aprt_tenant,on_delete=models.SET_NULL,null=True,blank=True)
 
     def __str__(self):
         return self.apartment.building.name + " - " + self.apartment.aprt_number + " - {}".format(self.id)
@@ -133,7 +126,6 @@ class maintenance_invoice(models.Model):
     
     is_deleted = models.BooleanField(default=False)
 
-    tenant = models.ForeignKey(aprt_tenant,on_delete=models.SET_NULL,null=True,blank=True)
 
     def __str__(self):
         return self.apartment.building.name + " - " + self.apartment.aprt_number + " - {}".format(self.id)

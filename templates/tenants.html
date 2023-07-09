@@ -18,34 +18,21 @@
                     <div class="col-lg-12">
                         <div class="card">
                             <div class="card-head text-center">
-                                {% if sel == 'i' %}
-                                    <a href="{% url 'invoices' aobj.id %}"><-Back</a>&ensp;&ensp;&ensp; Building - {{aobj.building.name}} &ensp; Apartment - {{aobj.aprt_number}} <br><br>
-                                {% else %}
-                                    <a href="{% url 'maintenance-invoices' aobj.id %}"><-Back</a>&ensp;&ensp;&ensp; Building - {{aobj.building.name}} &ensp; Apartment - {{aobj.aprt_number}} <br><br>
-                                {% endif %}
+                                <a href="{% url 'apartments' aobj.building.id %}"><-Back</a>&ensp;&ensp;&ensp; Add New Tenant
                             </div>
                             <div class="card-body">
                                 {% if objs %}
                                     <table class="table">
                                         <tr>
                                             <td>Name</td>
-                                            <td>Phone Number</td>
-                                            <td>Contract Number</td>
-                                            <td>Electric Number</td>
                                             <td>Actions</td>
                                         </tr>
                                         {% for i in objs %}
                                             <tr>
                                                 <td>{{i.name}}</td>
-                                                <td>{{i.phone_number}}</td>
-                                                <td>{{i.contract_number}}</td>
-                                                <td>{{i.electric_number}}</td>
                                                 <td>
-                                                    {% if sel == 'i' %}
-                                                        <a href="{% url 'tenant-invoices' aobj.id i.id %}" title="Show Invoices">Show Invoices</a>
-                                                    {% else %}
-                                                        <a href="{% url 'tenant-maintenance-invoices' aobj.id i.id %}" title="Show Invoices">Show Invoices</a>
-                                                    {% endif %}
+                                                    <a href="{% url 'tenant-invoices' aobj.id i.id %}" title="Show Invoices">Show Invoices</a>
+                                                    <a href="{% url 'tenant-maintenance-invoices' aobj.id i.id %}" title="Show Invoices">Show Maintenance Invoices</a>
                                                 </td>
                                             </tr>
                                         {% endfor %}
