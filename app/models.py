@@ -55,12 +55,17 @@ class apartment(models.Model):
     aprt_link = models.ForeignKey("tenant_link",on_delete=models.SET_NULL,blank=True,null=True)
     new_tenant_added = models.BooleanField(default=False)
 
+    display_order = models.IntegerField(default=0)
+
     def __str__(self):
         return self.building.name + " - " + self.aprt_number
     
     def getDisplayName(self):
         aprt_types = {"Apartment":"شقة","Floor":"دور","Home":"غرفة","Store":"محل ","Studio":"ملحق"}
-        return aprt_types[self.type_of]
+        try:
+            return aprt_types[self.type_of]
+        except:
+            return self.type_of
 
     def getShowColor(self):
         invs = invoice.objects.filter(apartment=self).order_by("today_date")

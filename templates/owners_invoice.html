@@ -74,6 +74,108 @@
                             </div>
                             <div class="card-body">
                                 {% if objs %}
+                                    <script>
+                                        curr_page = 1;
+                                        total_pages = 1;
+                                        $(document).ready(function (){
+                                            no_rows = document.getElementsByClassName("invoice_rows").length;
+                                            if (no_rows > 20){
+                                                document.getElementById("pagination-div").style = "";
+                                                total_pages = Math.ceil(no_rows / 20);
+                                                for (i=21 ; i<=no_rows ; i++){
+                                                    temp = document.getElementById("row-"+i);
+                                                    temp.style = "display: none;";
+                                                }
+                                            }
+                                        });
+                                        
+                                        function leftScroll(){
+                                            if (curr_page != 1){
+                                                no_rows = document.getElementsByClassName("invoice_rows").length;
+                                                for (i=1 ; i<=no_rows ; i++){
+                                                    temp = document.getElementById("row-"+i);
+                                                    temp.style = "display: none;";
+                                                }
+                                                for (i=20*(curr_page-2) + 1 ; i<=20*(curr_page-1) ; i++){
+                                                    try{
+                                                        temp = document.getElementById("row-"+i);
+                                                        temp.style = "";
+                                                    }
+                                                    catch(e){
+                                                        break;
+                                                    }
+                                                }
+                                                curr_page = curr_page - 1;
+
+                                                if (curr_page == total_pages){
+                                                    temp = document.getElementById("rightClick").style = "color:black;";
+                                                }
+                                                else{
+                                                    temp = document.getElementById("rightClick").style = "color:blue;";
+                                                }
+                                                if (curr_page == 1){
+                                                    temp = document.getElementById("leftClick").style = "color:black;";
+                                                }
+                                                else{
+                                                    temp = document.getElementById("leftClick").style = "color:blue;";
+                                                }
+
+                                                document.getElementById("page-count").innerText = "Page - "+curr_page;
+                                            }
+                                        }
+
+                                        function rightScroll(){
+                                            if (curr_page != total_pages){
+                                                no_rows = document.getElementsByClassName("invoice_rows").length;
+                                                for (i=1 ; i<=no_rows ; i++){
+                                                    temp = document.getElementById("row-"+i);
+                                                    temp.style = "display: none;";
+                                                }
+                                                for (i=20*(curr_page) + 1 ; i<=20*(curr_page+1) ; i++){
+                                                    try{
+                                                        temp = document.getElementById("row-"+i);
+                                                        temp.style = "";
+                                                    }
+                                                    catch(e){
+                                                        break;
+                                                    }
+                                                }
+                                                curr_page = curr_page + 1;
+
+                                                if (curr_page == total_pages){
+                                                    temp = document.getElementById("rightClick").style = "color:black;";
+                                                }
+                                                else{
+                                                    temp = document.getElementById("rightClick").style = "color:blue;";
+                                                }
+                                                if (curr_page == 1){
+                                                    temp = document.getElementById("leftClick").style = "color:black;";
+                                                }
+                                                else{
+                                                    temp = document.getElementById("leftClick").style = "color:blue;";
+                                                }
+                                                
+                                                document.getElementById("page-count").innerText = "Page - "+curr_page;
+                                            }
+                                        }
+                                    </script>
+                                    <div class="row" id="pagination-div" style="display: none;">
+                                        <div class="col-sm-1">
+
+                                        </div>
+                                        <div class="col-sm-1">
+                                            <span class="fa fa-arrow-left" onclick="leftScroll();" style="color: black;" id="leftClick"></span>
+                                        </div>
+                                        <div class="col-sm-8 text-center" id="page-count">
+                                            Page - 1
+                                        </div>
+                                        <div class="col-sm-1">
+                                            &ensp;<span class="fa fa-arrow-right" onclick="rightScroll();" style="color: blue;" id="rightClick"></span>
+                                        </div>
+                                        <div class="col-sm-1">
+
+                                        </div>
+                                    </div>
                                     <table class="table">
                                         <tr>
                                             <td>Building</td>
@@ -89,7 +191,7 @@
                                             <td>Actions</td>
                                         </tr>
                                         {% for i in objs %}
-                                            <tr>
+                                            <tr id="row-{{forloop.counter}}" class="invoice_rows">
                                                 <td>{{i.apartment.building.name}}</td>
                                                 <td>{{i.apartment.aprt_number}}</td>
                                                 <td>{{i.remaining_amount}}</td>

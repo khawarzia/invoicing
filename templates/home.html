@@ -143,6 +143,19 @@
                                 </script>
                             </div>
                         </div>
+                        <br>
+                        <div class="card">
+                            <div class="card-head text-center">
+                                Search By Phone Number :
+                                <br>
+                                <form style="display: none;" method="post" id="phone_search" action="{% url 'search-apartment-by-phone' %}">{% csrf_token %}</form>
+                                <input type="text" placeholder="Phone Number" form="phone_search" name="pnum" class="form-control" required>
+                                <br>
+                                <button class="btn btn-primary" form="phone_search" type="submit">
+                                    Search
+                                </button><br><br>
+                            </div>
+                        </div>
                     </div>
                     <div class="col-lg-6">
                         <div class="card">

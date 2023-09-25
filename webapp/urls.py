@@ -62,4 +62,7 @@ urlpatterns = [
     path("tenant-invoices/<int:aid>/<int:id>",views.tenant_invoices,name="tenant-invoices"),
     path("tenant-maintenance-invoices/<int:aid>/<int:id>",views.tenant_maintenance_invoices,name="tenant-maintenance-invoices"),
 
+    path("move-up-apartment/<int:bid>/<int:aid>",views.move_up_apartment,name='move-up-apartment'),
+    path("move-down-apartment/<int:bid>/<int:aid>",views.move_down_apartment,name='move-down-apartment'),
+    path("search-apartment-by-phone",views.search_apartment_by_phone,name='search-apartment-by-phone'),
 ]

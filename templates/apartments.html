@@ -140,7 +140,12 @@
 
                                         </div>
                                         <div class="col-lg-1">
-
+                                            <a href="{% url 'move-up-apartment' bobj.id i.id %}" style="color: black;">
+                                                <span class="fa fa-arrow-up"></span>
+                                            </a>
+                                            <a href="{% url 'move-down-apartment' bobj.id i.id %}" style="color: black;">
+                                                <span class="fa fa-arrow-down"></span>
+                                            </a>
                                         </div>
                                     </div>
                                     <hr class="abcd {{i.getShowColor}}">

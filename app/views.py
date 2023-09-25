@@ -14,6 +14,16 @@ from bidi.algorithm import get_display
 import openpyxl
 import datetime
 
+objs = building.objects.all()
+for i in objs:
+    aobjs = apartment.objects.filter(building=i,new_tenant_added=False)
+    print(len(aobjs))
+    disp = 0
+    for j in aobjs:
+        j.display_order = disp
+        j.save()
+        disp += 1
+
 def get_user_profile(userobj):
     try:
         obj = user_profile.objects.get(user=userobj)
@@ -104,12 +114,12 @@ def apartments(request,id):
         obj = get_user_profile(request.user)
         context['type_of_user'] = obj.type_of_user == 'd'
         building_obj = building.objects.get(pk=id)
-        objs = apartment.objects.filter(building=building_obj,temp_del=False,new_tenant_added=False)
+        objs = apartment.objects.filter(building=building_obj,temp_del=False,new_tenant_added=False).order_by("-display_order")
         del_objs = apartment.objects.filter(building=building_obj,temp_del=True,new_tenant_added=False)
         temp_del_objs = []
         for i in del_objs:
             day_diff = datetime.date.today() - i.temp_del_date
-            if day_diff.days == 7:
+            if day_diff.days >= 7:
                 i.delete()
             else:
                 temp_del_objs.append(i)
@@ -166,7 +176,11 @@ def apartment_form(request,id,prev_id):
                 if prev_id == "x":
                     linkobj = tenant_link()
                     linkobj.save()
+                    temp_objs = apartment.objects.filter(building=bobj).order_by("-display_order")
+                    if (len(temp_objs) > 0):
+                        obj.display_order = temp_objs[0].display_order
                 else:
+                    obj.display_order = aobj.display_order
                     aobj.new_tenant_added = True
                     aobj.save()
                     linkobj = aobj.aprt_link
@@ -908,3 +922,43 @@ def tenant_maintenance_invoices(request,aid,id):
         return render(request,template,context)
     else:
         return redirect('/home')
+    
+def move_up_apartment(request,bid,aid):
+    aobjs = apartment.objects.filter(building__id=bid,new_tenant_added=False).order_by("-display_order")
+    if aobjs[0].id != aid:
+        temp_order = 0
+        prev_obj = aobjs[0]
+        for i in aobjs:
+            if i.id == aid:
+                temp_order = i.display_order
+                i.display_order = prev_obj.display_order
+                i.save()
+                prev_obj.display_order = temp_order
+                prev_obj.save()
+                break
+            prev_obj = i
+    return redirect("/apartments/{}".format(bid))
+
+def move_down_apartment(request,bid,aid):
+    aobjs = apartment.objects.filter(building__id=bid,new_tenant_added=False).order_by("display_order")
+    if aobjs[0].id != aid:
+        temp_order = 0
+        prev_obj = aobjs[0]
+        for i in aobjs:
+            if i.id == aid:
+                temp_order = i.display_order
+                i.display_order = prev_obj.display_order
+                i.save()
+                prev_obj.display_order = temp_order
+                prev_obj.save()
+                break
+            prev_obj = i
+    return redirect("/apartments/{}".format(bid))
+
+def search_apartment_by_phone(request):
+    template = "apartments_by_phone_number.html"
+    context = {}
+
+    context['objs'] =  apartment.objects.filter(temp_del=False,new_tenant_added=False,phone_nmber=request.POST['pnum'])
+
+    return render(request,template,context)
