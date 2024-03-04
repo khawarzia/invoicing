@@ -14,7 +14,7 @@ from bidi.algorithm import get_display
 import openpyxl
 import datetime
 
-objs = building.objects.all()
+""" objs = building.objects.all()
 for i in objs:
     aobjs = apartment.objects.filter(building=i,new_tenant_added=False)
     print(len(aobjs))
@@ -22,7 +22,7 @@ for i in objs:
     for j in aobjs:
         j.display_order = disp
         j.save()
-        disp += 1
+        disp += 1 """
 
 def get_user_profile(userobj):
     try:
@@ -114,7 +114,7 @@ def apartments(request,id):
         obj = get_user_profile(request.user)
         context['type_of_user'] = obj.type_of_user == 'd'
         building_obj = building.objects.get(pk=id)
-        objs = apartment.objects.filter(building=building_obj,temp_del=False,new_tenant_added=False).order_by("-display_order")
+        objs = apartment.objects.filter(building=building_obj,temp_del=False,new_tenant_added=False).order_by("display_order")
         del_objs = apartment.objects.filter(building=building_obj,temp_del=True,new_tenant_added=False)
         temp_del_objs = []
         for i in del_objs:
@@ -340,8 +340,8 @@ def print_invoice(request,id):
     p = canvas.Canvas(buffer)
     p.setFont('Arabic', 13)
 
-    offset = 415
-    remain_offset = 0
+    offset = 402
+    remain_offset = -17
     x_remain_offset = 0
     
     if (len(obj) == 1):
@@ -350,7 +350,7 @@ def print_invoice(request,id):
 
             if (obj[0].remaining_amount > 0):
                 invoice_name = "Cash_Remain.pdf"
-                remain_offset = 57
+                remain_offset = 35
                 offset = offset + 25
                 p.drawString(270, 410+remain_offset, "{}".format(obj[0].remaining_amount))
                 p.drawString(270, 410-offset+remain_offset, "{}".format(obj[0].remaining_amount))
@@ -371,92 +371,106 @@ def print_invoice(request,id):
 
             p.drawString(270, 485+remain_offset, get_display(arabic_reshaper.reshape("نقدا")))
             p.drawString(270, 485-offset+remain_offset, get_display(arabic_reshaper.reshape("نقدا")))
+
+            p.drawString(45, 760-offset+remain_offset, "{}".format(obj[0].today_date.strftime("%Y/%m/%d")))
+            p.drawString(15, 740-offset+remain_offset, "{}".format(get_display(arabic_reshaper.reshape(obj[0].user.username))))
+            p.drawString(380, 760-offset+remain_offset, "{:05d}".format(obj[0].invoice_number))
+            p.drawString(360, 740-offset+remain_offset, obj[0].apartment.contract_number)
+            p.drawString(270, 720-offset+remain_offset, get_display(arabic_reshaper.reshape(obj[0].apartment.name)) )
+            p.drawString(270, 680-offset+remain_offset, "{}".format(obj[0].amount))
+            p.drawString(260, 640-offset+remain_offset, get_display(arabic_reshaper.reshape(aprt_types[obj[0].apartment.type_of])))
+            p.drawString(280, 600-offset+remain_offset, "{}".format(obj[0].apartment.aprt_number))
+            p.drawString(270, 560-offset+remain_offset, "{}".format(get_display(arabic_reshaper.reshape(obj[0].apartment.building.name))))
+            p.setFont('Arabic', 10)
+            p.drawString(110, 455-offset+remain_offset, get_display(arabic_reshaper.reshape(obj[0].note)))
+            p.setFont('Arabic', 13)
+
         else:
+            remain_offset = -13.5
+            x_remain_offset = 0
             if (obj[0].remaining_amount > 0):
-                invoice_name = "Transfer_Remain.pdf"
-                remain_offset = 71
-                offset = offset + 25
-                x_remain_offset = 6
+                invoice_name = "Transfer_Remain2.pdf"
+                
                 p.drawString(270, 410+remain_offset, "{}".format(obj[0].remaining_amount))
-                p.drawString(270, 410-offset+remain_offset, "{}".format(obj[0].remaining_amount))
+                #p.drawString(270, 410-offset+remain_offset, "{}".format(obj[0].remaining_amount))
 
-                p.drawString(135+x_remain_offset, 481+remain_offset, "{}".format(obj[0].transfer_date.year))
-                p.drawString(175+x_remain_offset, 481+remain_offset, "{}".format(obj[0].transfer_date.month))
-                p.drawString(202+x_remain_offset, 481+remain_offset, "{}".format(obj[0].transfer_date.day))
-                p.drawString(135+x_remain_offset, 487-offset+remain_offset, "{}".format(obj[0].transfer_date.year))
-                p.drawString(175+x_remain_offset, 487-offset+remain_offset, "{}".format(obj[0].transfer_date.month))
-                p.drawString(202+x_remain_offset, 487-offset+remain_offset, "{}".format(obj[0].transfer_date.day))
+                p.drawString(135+x_remain_offset, 472+remain_offset, "{}".format(obj[0].transfer_date.year))
+                p.drawString(175+x_remain_offset, 472+remain_offset, "{}".format(obj[0].transfer_date.month))
+                p.drawString(202+x_remain_offset, 472+remain_offset, "{}".format(obj[0].transfer_date.day))
+                #p.drawString(135-x_remain_offset, 482-offset+remain_offset, "{}".format(obj[0].transfer_date.year))
+                #p.drawString(175-x_remain_offset, 482-offset+remain_offset, "{}".format(obj[0].transfer_date.month))
+                #p.drawString(202-x_remain_offset, 482-offset+remain_offset, "{}".format(obj[0].transfer_date.day))
 
-                x_remain_offset = 6
+                x_remain_offset = 0
 
                 p.setFont('Arabic', 10)
 
                 p.drawString(255, 479+remain_offset, get_display(arabic_reshaper.reshape(obj[0].bank_of_transfer)))
-                p.drawString(255, 484-offset+remain_offset, get_display(arabic_reshaper.reshape(obj[0].bank_of_transfer)))
+                #p.drawString(255, 480-offset+remain_offset, get_display(arabic_reshaper.reshape(obj[0].bank_of_transfer)))
 
                 p.setFont('Arabic', 13)
             else:
-                invoice_name = "Transfer_Invoice.pdf"
+                invoice_name = "Transfer_Invoice2.pdf"
 
                 p.drawString(135-x_remain_offset, 475+remain_offset, "{}".format(obj[0].transfer_date.year))
                 p.drawString(175-x_remain_offset, 475+remain_offset, "{}".format(obj[0].transfer_date.month))
                 p.drawString(202-x_remain_offset, 475+remain_offset, "{}".format(obj[0].transfer_date.day))
-                p.drawString(135-x_remain_offset, 482-offset+remain_offset, "{}".format(obj[0].transfer_date.year))
-                p.drawString(175-x_remain_offset, 482-offset+remain_offset, "{}".format(obj[0].transfer_date.month))
-                p.drawString(202-x_remain_offset, 482-offset+remain_offset, "{}".format(obj[0].transfer_date.day))
+                #p.drawString(135-x_remain_offset, 482-offset+remain_offset, "{}".format(obj[0].transfer_date.year))
+                #p.drawString(175-x_remain_offset, 482-offset+remain_offset, "{}".format(obj[0].transfer_date.month))
+                #p.drawString(202-x_remain_offset, 482-offset+remain_offset, "{}".format(obj[0].transfer_date.day))
 
                 p.setFont('Arabic', 10)
 
                 p.drawString(255, 475+remain_offset, get_display(arabic_reshaper.reshape(obj[0].bank_of_transfer)))
-                p.drawString(255, 480-offset+remain_offset, get_display(arabic_reshaper.reshape(obj[0].bank_of_transfer)))
+                #p.drawString(255, 480-offset+remain_offset, get_display(arabic_reshaper.reshape(obj[0].bank_of_transfer)))
 
                 p.setFont('Arabic', 13)
 
             p.drawString(340-x_remain_offset, 520+remain_offset, "{}".format(obj[0].from_date.year))
             p.drawString(374-x_remain_offset, 520+remain_offset, "{}".format(obj[0].from_date.month))
             p.drawString(392-x_remain_offset, 520+remain_offset, "{}".format(obj[0].from_date.day))
-            p.drawString(338-x_remain_offset, 525-offset+remain_offset, "{}".format(obj[0].from_date.year))
-            p.drawString(372-x_remain_offset, 525-offset+remain_offset, "{}".format(obj[0].from_date.month))
-            p.drawString(390-x_remain_offset, 525-offset+remain_offset, "{}".format(obj[0].from_date.day))
+            #p.drawString(338-x_remain_offset, 525-offset+remain_offset, "{}".format(obj[0].from_date.year))
+            #p.drawString(372-x_remain_offset, 525-offset+remain_offset, "{}".format(obj[0].from_date.month))
+            #p.drawString(390-x_remain_offset, 525-offset+remain_offset, "{}".format(obj[0].from_date.day))
 
             p.drawString(145-x_remain_offset, 520+remain_offset, "{}".format(obj[0].to_date.year))
             p.drawString(180-x_remain_offset, 520+remain_offset, "{}".format(obj[0].to_date.month))
             p.drawString(200-x_remain_offset, 520+remain_offset, "{}".format(obj[0].to_date.day))
-            p.drawString(143-x_remain_offset, 525-offset+remain_offset, "{}".format(obj[0].to_date.year))
-            p.drawString(178-x_remain_offset, 525-offset+remain_offset, "{}".format(obj[0].to_date.month))
-            p.drawString(198-x_remain_offset, 525-offset+remain_offset, "{}".format(obj[0].to_date.day))
+            #p.drawString(143-x_remain_offset, 525-offset+remain_offset, "{}".format(obj[0].to_date.year))
+            #p.drawString(178-x_remain_offset, 525-offset+remain_offset, "{}".format(obj[0].to_date.month))
+            #p.drawString(198-x_remain_offset, 525-offset+remain_offset, "{}".format(obj[0].to_date.day))
 
         p.drawString(45, 760+remain_offset, "{}".format(obj[0].today_date.strftime("%Y/%m/%d")))
-        p.drawString(45, 760-offset+remain_offset, "{}".format(obj[0].today_date.strftime("%Y/%m/%d")))
+        #p.drawString(45, 760-offset+remain_offset, "{}".format(obj[0].today_date.strftime("%Y/%m/%d")))
 
         p.drawString(15, 740+remain_offset, "{}".format(get_display(arabic_reshaper.reshape(obj[0].user.username))))
-        p.drawString(15, 740-offset+remain_offset, "{}".format(get_display(arabic_reshaper.reshape(obj[0].user.username))))
+        #p.drawString(15, 740-offset+remain_offset, "{}".format(get_display(arabic_reshaper.reshape(obj[0].user.username))))
 
         p.drawString(380, 760+remain_offset, "{:05d}".format(obj[0].invoice_number))
-        p.drawString(380, 760-offset+remain_offset, "{:05d}".format(obj[0].invoice_number))
+        #p.drawString(380, 760-offset+remain_offset, "{:05d}".format(obj[0].invoice_number))
 
         p.drawString(380, 740+remain_offset, obj[0].apartment.contract_number)
-        p.drawString(380, 740-offset+remain_offset, obj[0].apartment.contract_number)
+        #p.drawString(380, 740-offset+remain_offset, obj[0].apartment.contract_number)
 
         p.drawString(270, 720+remain_offset, get_display(arabic_reshaper.reshape(obj[0].apartment.name)) )
-        p.drawString(270, 720-offset+remain_offset, get_display(arabic_reshaper.reshape(obj[0].apartment.name)) )
+        #p.drawString(270, 720-offset+remain_offset, get_display(arabic_reshaper.reshape(obj[0].apartment.name)) )
 
         p.drawString(270, 680+remain_offset, "{}".format(obj[0].amount))
-        p.drawString(270, 680-offset+remain_offset, "{}".format(obj[0].amount))
+        #p.drawString(270, 680-offset+remain_offset, "{}".format(obj[0].amount))
 
         p.drawString(260, 640+remain_offset, get_display(arabic_reshaper.reshape(aprt_types[obj[0].apartment.type_of])))
-        p.drawString(260, 640-offset+remain_offset, get_display(arabic_reshaper.reshape(aprt_types[obj[0].apartment.type_of])))
+        #p.drawString(260, 640-offset+remain_offset, get_display(arabic_reshaper.reshape(aprt_types[obj[0].apartment.type_of])))
 
         p.drawString(280, 600+remain_offset, "{}".format(obj[0].apartment.aprt_number))
-        p.drawString(280, 600-offset+remain_offset, "{}".format(obj[0].apartment.aprt_number))
+        #p.drawString(280, 600-offset+remain_offset, "{}".format(obj[0].apartment.aprt_number))
 
         p.drawString(270, 560+remain_offset, "{}".format(get_display(arabic_reshaper.reshape(obj[0].apartment.building.name))))
-        p.drawString(270, 560-offset+remain_offset, "{}".format(get_display(arabic_reshaper.reshape(obj[0].apartment.building.name))))
+        #p.drawString(270, 560-offset+remain_offset, "{}".format(get_display(arabic_reshaper.reshape(obj[0].apartment.building.name))))
 
         p.setFont('Arabic', 10)
 
         p.drawString(110, 455+remain_offset, get_display(arabic_reshaper.reshape(obj[0].note)))
-        p.drawString(110, 455-offset+remain_offset, get_display(arabic_reshaper.reshape(obj[0].note)))
+        #p.drawString(110, 455-offset+remain_offset, get_display(arabic_reshaper.reshape(obj[0].note)))
 
 
     p.showPage()
@@ -924,7 +938,7 @@ def tenant_maintenance_invoices(request,aid,id):
         return redirect('/home')
     
 def move_up_apartment(request,bid,aid):
-    aobjs = apartment.objects.filter(building__id=bid,new_tenant_added=False).order_by("-display_order")
+    aobjs = apartment.objects.filter(building__id=bid,new_tenant_added=False).order_by("display_order")
     if aobjs[0].id != aid:
         temp_order = 0
         prev_obj = aobjs[0]
@@ -940,7 +954,7 @@ def move_up_apartment(request,bid,aid):
     return redirect("/apartments/{}".format(bid))
 
 def move_down_apartment(request,bid,aid):
-    aobjs = apartment.objects.filter(building__id=bid,new_tenant_added=False).order_by("display_order")
+    aobjs = apartment.objects.filter(building__id=bid,new_tenant_added=False).order_by("-display_order")
     if aobjs[0].id != aid:
         temp_order = 0
         prev_obj = aobjs[0]
