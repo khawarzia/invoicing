@@ -32,6 +32,14 @@
                         document.getElementById("b4").hidden = true;
                     }
                 }
+                function getToDate(a){
+                    $.get("/get-to-date-for-invoice/{{id}}/"+a, function (data){
+                        if (data["check"] == "1"){
+                            document.getElementsByName('fdate')[0].value = data["from_date"];
+                            document.getElementsByName('tdate')[0].value = data["to_date"];
+                        }
+                    });
+                }
             </script>
         </head>
         
@@ -69,7 +77,7 @@
                                     </div>
                                 {% endif %}
                                 <form method="post">{% csrf_token %}
-                                    <input type="number" class="form-control" required name="amount" placeholder="Enter The Amount"><br>
+                                    <input type="number" class="form-control" required name="amount" placeholder="Enter The Amount" onchange="getToDate(this.value);"><br>
                                     <input type="number" class="form-control" name="ramount" placeholder="Enter The Remaining Amount"><br>
                                     <select name="payment" class="form-control" required onchange="changeFormBasedOnOption(this.value)">
                                         <option value="" disabled selected>Select Payment Option</option>

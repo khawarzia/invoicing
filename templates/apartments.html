@@ -51,12 +51,20 @@
                             </div>
                             <div class="card-footer">
                                 <br><br>
-                                Showing Color Tags : <select class="form-control" onchange="showColorApartments(this.value)">
+                                Showing Color Tags : <select class="form-control" id="color-tag-filter" onchange="showColorApartments(this.value)">
                                     <option>All</option>
                                     <option value="green">Green</option>
                                     <option value="yellow">Yellow</option>
                                     <option value="red">Red</option>
                                     <option value="black">Black</option>
+                                </select>
+                                <br>
+                                Showing Payment Methods : <select class="form-control" id="payment-method-filter" onchange="showPaymentMethodApartments(this.value)">
+                                    <option>All</option>
+                                    <option value="1">Monthly</option>
+                                    <option value="2">Every 3 months</option>
+                                    <option value="3">Every 6 months</option>
+                                    <option value="4">Yearly</option>
                                 </select>
                                 <br>
                                 <button class="btn btn-primary" onclick="showToDates();">
@@ -74,9 +82,38 @@
                                             }
                                         }
                                         else{
+                                            document.getElementById('payment-method-filter').value="All";
+                                            showPaymentMethodApartments("All");
                                             ob = document.getElementsByClassName("abcd");
                                             for (i=0 ; i <ob.length ; i++){
                                                 if (ob[i].getAttribute("class") == "abcd "+a || ob[i].getAttribute("class") == "row abcd "+a){
+                                                    count++;
+                                                    ob[i].hidden = false;
+                                                }
+                                                else{
+                                                    ob[i].hidden = true;
+                                                }
+                                            }
+                                            if (count == 0){
+                                                alert("No Apartment has that tag!");
+                                            }
+                                        }
+                                    }
+                                    function showPaymentMethodApartments(a){
+                                        count = 0;
+                                        if (a == "All"){
+                                            ob = document.getElementsByClassName("abcd");
+                                            for (i=0 ; i <ob.length ; i++){
+                                                ob[i].hidden = false;
+                                            }
+                                        }
+                                        else{
+                                            document.getElementById('color-tag-filter').value="All";
+                                            showColorApartments("All");
+                                            ob = document.getElementsByClassName("abcd");
+                                            for (i=0 ; i <ob.length ; i++){
+                                                temp_id = "-"+a;
+                                                if (ob[i].getAttribute("id").includes(temp_id)){
                                                     count++;
                                                     ob[i].hidden = false;
                                                 }
@@ -117,7 +154,7 @@
                             <div class="card-body">
                                 {% if objs %}
                                     {% for i in objs %}
-                                    <div class="row abcd {{i.getShowColor}}">
+                                    <div class="row abcd {{i.getShowColor}}" id="{{forloop.counter}}-{{i.payment_method}}">
                                         <div class="col-lg-7">
                                             {% if type_of_user %}
                                                 <a onclick="confirm_delete('{% url 'delete-apartment' i.id %}')" title="Delete">
@@ -148,7 +185,7 @@
                                             </a>
                                         </div>
                                     </div>
-                                    <hr class="abcd {{i.getShowColor}}">
+                                    <hr class="abcd {{i.getShowColor}}" id="{{forloop.counter}}pay-{{i.payment_method}}">
                                     {% endfor %}
                                 {% else %}
                                     <a>This Building Has No Apartments To Manage Right Now.</a>

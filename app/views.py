@@ -13,8 +13,10 @@ from reportlab.pdfbase.ttfonts import TTFont
 from bidi.algorithm import get_display
 import openpyxl
 import datetime
+from datetime import timedelta
 
-""" objs = building.objects.all()
+""" 
+objs = building.objects.all()
 for i in objs:
     aobjs = apartment.objects.filter(building=i,new_tenant_added=False)
     print(len(aobjs))
@@ -22,7 +24,16 @@ for i in objs:
     for j in aobjs:
         j.display_order = disp
         j.save()
-        disp += 1 """
+        disp += 1       
+
+
+objs = apartment.objects.all()
+for i in objs:
+    i.payment_method = "1"
+    i.annual_rent = "1"
+    i.save()
+"""
+
 
 def get_user_profile(userobj):
     try:
@@ -160,7 +171,7 @@ def apartment_form(request,id,prev_id):
             aobj = apartment.objects.get(pk=int(prev_id))
             context['aobj'] = aobj
         if request.method == "POST":
-            if request.POST['name'] and request.POST['num'] and request.POST['phone'] and request.POST['type_of'] and request.POST['dob'] and request.POST['cnum'] and request.POST['enum']:
+            if request.POST['name'] and request.POST['num'] and request.POST['phone'] and request.POST['type_of'] and request.POST['dob'] and request.POST['cnum'] and request.POST['enum'] and request.POST['rent'] and request.POST['payment_method']:
                 bobj = building.objects.get(pk=id)
                 obj = apartment()
                 obj.aprt_number = request.POST['num']
@@ -170,6 +181,8 @@ def apartment_form(request,id,prev_id):
                 obj.phone_nmber = request.POST['phone']
                 obj.elect_number = request.POST['enum']
                 obj.contract_number = request.POST['cnum']
+                obj.annual_rent = request.POST['rent']
+                obj.payment_method = request.POST['payment_method']
                 obj.note = request.POST['note']
                 obj.building = bobj
                 obj.save()
@@ -210,7 +223,7 @@ def edit_apartment_form(request,id):
         template = "apartments_invoice.html"
         context = {}
         if request.method == "POST":
-            if request.POST['name'] and request.POST['num'] and request.POST['phone'] and request.POST['type_of'] and request.POST['dob'] and request.POST['cnum'] and request.POST['enum']:
+            if request.POST['name'] and request.POST['num'] and request.POST['phone'] and request.POST['type_of'] and request.POST['dob'] and request.POST['cnum'] and request.POST['enum'] and request.POST['rent'] and request.POST['payment_method']:
                 objs = apartment.objects.filter(pk=id)
                 obj = objs[0]
                 obj.aprt_number = request.POST['num']
@@ -220,6 +233,8 @@ def edit_apartment_form(request,id):
                 obj.phone_nmber = request.POST['phone']
                 obj.elect_number = request.POST['enum']
                 obj.contract_number = request.POST['cnum']
+                obj.annual_rent = request.POST['rent']
+                obj.payment_method = request.POST['payment_method']
                 obj.note = request.POST['note']
                 obj.save()
                 return redirect("/invoices/{}".format(id))
@@ -976,3 +991,41 @@ def search_apartment_by_phone(request):
     context['objs'] =  apartment.objects.filter(temp_del=False,new_tenant_added=False,phone_nmber=request.POST['pnum'])
 
     return render(request,template,context)
+
+def search_apartment_by_contract(request):
+    template = "apartments_by_contract_number.html"
+    context = {}
+
+    context['objs'] =  apartment.objects.filter(temp_del=False,new_tenant_added=False,contract_number=request.POST['cnum'])
+
+    return render(request,template,context)
+
+def get_to_date_for_invoice(request,id,amt):
+    retval = {"check":"0","from_date":"","to_date":""}
+
+    objs = reversed(list(invoice.objects.filter(is_deleted=False,apartment=apartment.objects.get(pk=id))))
+    for i in objs:
+        temp_from_date = datetime.date(year=int(i.to_date.year),month=int(i.to_date.month),day=int(i.to_date.day))
+        temp_from_date = temp_from_date.strftime("%Y-%m-%d")
+        temp_to_date = calculate_to_date(int(i.apartment.annual_rent), amt, temp_from_date)
+        retval['check'] = "1"
+        retval['from_date'] = temp_from_date
+        retval['to_date'] = temp_to_date
+        break
+
+    return JsonResponse(retval)
+
+def calculate_to_date(annual_rent, amount, from_date_str):
+    # Convert the from_date string to a datetime object
+    from_date = datetime.datetime.strptime(from_date_str, "%Y-%m-%d")
+    
+    # Calculate the daily rent
+    daily_rent = annual_rent / 365
+    
+    # Calculate the number of days the amount covers
+    days_covered = amount / daily_rent
+    
+    # Calculate the to_date by adding the days_covered to the from_date
+    to_date = from_date + timedelta(days=int(days_covered))
+    
+    return to_date.strftime("%Y-%m-%d")

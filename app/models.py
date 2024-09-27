@@ -48,6 +48,8 @@ class apartment(models.Model):
     elect_number = models.CharField(max_length=300,null=True,blank=True)
     note = models.TextField(max_length=2000,null=True,blank=True)
     building = models.ForeignKey(building,on_delete=models.CASCADE)
+    annual_rent = models.CharField(max_length=50,null=True,blank=True)
+    payment_method = models.CharField(max_length=10,null=True,blank=True)
 
     temp_del = models.BooleanField(default=False)
     temp_del_date = models.DateField(null=True,blank=True)
