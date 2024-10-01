@@ -17,6 +17,8 @@ class invoice_owner(models.Model):
 class user_profile(models.Model):
     user = models.ForeignKey(User,on_delete=models.CASCADE)
     type_of_user = models.CharField(max_length=20,choices=type_of_user_choices,default='d')
+    download_report_allowed = models.BooleanField(default=True)
+    delete_invoice_allowed = models.BooleanField(default=True)
     invoice_owner_allowed = models.ManyToManyField(invoice_owner,blank=True)
 
     def __str__(self):
@@ -118,6 +120,8 @@ class invoice(models.Model):
 
     is_deleted = models.BooleanField(default=False)
 
+    other_payment = models.BooleanField(default=False)
+    payment_type = models.CharField(max_length=200,null=True,blank=True)
 
     def __str__(self):
         return self.apartment.building.name + " - " + self.apartment.aprt_number + " - {}".format(self.id)

@@ -46,7 +46,7 @@
                                 </select><br>
                                 <button class="btn btn-primary" onclick="redirectToInvoices();">
                                     Show Invoices
-                                </button><br>
+                                </button><br><br>
                                 <script>
                                     function redirectToInvoices(){
                                         window.location.href = "/owner-invoices/"+document.getElementById("owners-invoice").value;
@@ -54,6 +54,20 @@
                                 </script>
                             </div>
                         </div>
+                        <br>
+                        {% if sel_owner %}
+                            <div class="card">
+                                <div class="card-head text-center">
+                                    <input type="number" class="form-control" id="invoice_number" placeholder="Invoice Number"><br>
+                                    <button class="btn btn-primary" onclick="searchInvoice();">
+                                        Search
+                                    </button>
+                                    <button class="btn btn-danger" onclick="resetTable();">
+                                        Reset
+                                    </button><br><br>
+                                </div>
+                            </div>
+                        {% endif %}
                     </div>
                     <div class="col-lg-10">
                         <div class="card">
@@ -125,6 +139,10 @@
                                         }
 
                                         function rightScroll(){
+                                            searched = document.getElementById("invoice_number").value;
+                                            if (searched){
+                                                return;
+                                            }
                                             if (curr_page != total_pages){
                                                 no_rows = document.getElementsByClassName("invoice_rows").length;
                                                 for (i=1 ; i<=no_rows ; i++){
@@ -156,6 +174,53 @@
                                                 }
                                                 
                                                 document.getElementById("page-count").innerText = "Page - "+curr_page;
+                                            }
+                                        }
+
+                                        function searchInvoice(){
+                                            searched = document.getElementById("invoice_number").value;
+                                            if (searched){
+                                                invoiceNumbers = document.getElementsByClassName("invoices");
+                                                check = true;
+                                                for (i=0 ; i<invoiceNumbers.length ; i++){
+                                                    if (invoiceNumbers[i].innerText && parseInt(invoiceNumbers[i].innerText) == parseInt(searched)){
+                                                        check = false;
+                                                        temp_id = invoiceNumbers[i].id.split("-")[1];
+                                                        for (j=1 ; j<total_pages ; j++){
+                                                            leftScroll();
+                                                        }
+                                                        tempRows = document.getElementsByClassName("invoice_rows");
+                                                        for (k=0 ; k<tempRows.length ; k++){
+                                                            tempRows[k].style = "display:none;";
+                                                        }
+                                                        document.getElementById("row-"+temp_id).style = "";
+                                                        break;
+                                                    }
+                                                }
+                                                if (check){
+                                                    resetTable();
+                                                    window.alert("No invoice with that number was found!");
+                                                }
+                                            }
+                                            else{
+                                                resetTable();
+                                                window.alert("Please enter an Invoice Number to perform search!");
+                                            }
+                                        }
+
+                                        function resetTable(){
+                                            tempRows = document.getElementsByClassName("invoice_rows");
+                                            for (k=0 ; k<tempRows.length ; k++){
+                                                tempRows[k].style = "";
+                                            }
+                                            no_rows = document.getElementsByClassName("invoice_rows").length;
+                                            if (no_rows > 20){
+                                                document.getElementById("pagination-div").style = "";
+                                                total_pages = Math.ceil(no_rows / 20);
+                                                for (i=21 ; i<=no_rows ; i++){
+                                                    temp = document.getElementById("row-"+i);
+                                                    temp.style = "display: none;";
+                                                }
                                             }
                                         }
                                     </script>
@@ -198,7 +263,7 @@
                                                 <td>{{i.to_date | date:'d-m-y'}}</td>
                                                 <td>{{i.from_date | date:'d-m-y'}}</td>
                                                 <td>{{i.today_date | date:'d-m-y'}}</td>
-                                                <td>{{i.invoice_number}}</td>
+                                                <td class="invoices" id="number-{{forloop.counter}}">{{i.invoice_number}}</td>
                                                 <td>{{i.amount}}</td>
                                                 <td>{{i.user.username}}</td>
                                                 <td>{{i.received_by}}</td>

@@ -276,11 +276,36 @@ def invoices(request,id):
         if request.method == "POST" and request.POST['asc_desc'] in ("0","1"):
             context["order"] = request.POST['asc_desc']
             if request.POST["asc_desc"] == "0":
-                objs = invoice.objects.filter(is_deleted=False,apartment=aobj).order_by("today_date")
+                objs = invoice.objects.filter(is_deleted=False,apartment=aobj,other_payment=False).order_by("today_date")
             else:
-                objs = invoice.objects.filter(is_deleted=False,apartment=aobj).order_by("-today_date")
+                objs = invoice.objects.filter(is_deleted=False,apartment=aobj,other_payment=False).order_by("-today_date")
         else:
-            objs = invoice.objects.filter(is_deleted=False,apartment=aobj)
+            objs = invoice.objects.filter(is_deleted=False,apartment=aobj,other_payment=False)
+        context['aobj'] = aobj
+        context['date_dis'] = aobj.dob.strftime("%Y-%m-%d")
+        context['objs'] = objs
+        return render(request,template,context)
+    else:
+        return redirect('/home')
+    
+@login_required(login_url='/')
+def other_invoices(request,id):
+    if id:
+        template = "apartments_other_invoice.html"
+        context = {}
+        obj = get_user_profile(request.user)
+        
+        context['type_of_user'] = obj.type_of_user == 'd'
+        context['write_priv'] = obj.type_of_user == 'w'
+        aobj = apartment.objects.get(pk=id)
+        if request.method == "POST" and request.POST['asc_desc'] in ("0","1"):
+            context["order"] = request.POST['asc_desc']
+            if request.POST["asc_desc"] == "0":
+                objs = invoice.objects.filter(is_deleted=False,apartment=aobj,other_payment=True).order_by("today_date")
+            else:
+                objs = invoice.objects.filter(is_deleted=False,apartment=aobj,other_payment=True).order_by("-today_date")
+        else:
+            objs = invoice.objects.filter(is_deleted=False,apartment=aobj,other_payment=True)
         context['aobj'] = aobj
         context['date_dis'] = aobj.dob.strftime("%Y-%m-%d")
         context['objs'] = objs
@@ -328,6 +353,57 @@ def invoice_form(request,id):
                     obj.invoice_number = invoice.objects.filter(is_deleted=False,owner=obj.owner).order_by("-invoice_number")[0].invoice_number + 1
                 obj.save()
                 return redirect("/invoices/{}".format(id))
+            else:
+                context['message'] = "Entered data is not valid."
+        return render(request,template,context)
+    else:
+        return redirect("/home")
+    
+@login_required(login_url='/')
+def other_invoice_form(request,id):
+    if id:
+        template = "new_other_invoice_form.html"
+        context = {'id':id}
+        objs = reversed(list(invoice.objects.filter(is_deleted=False,apartment=apartment.objects.get(pk=id))))
+        temp = []
+        temp1 = []
+        tempcount = 0
+        for i in objs:
+            temp.append(i.remaining_amount)
+            temp1.append("From : {} To : {}".format(i.from_date,i.to_date))
+            tempcount += 1
+            if tempcount == 3:
+                break
+        context['prev_trans'] = zip(temp1,temp)
+        if request.method == "POST":
+            if request.POST['amount'] and (request.POST['payment'] == "Cash" or (request.POST['payment'] == "Transfer" and request.POST['bank'] and request.POST['trans_date'])) and request.POST['fdate'] and request.POST['tdate'] and request.POST['type']:
+                obj = invoice()
+                obj.user = request.user
+                obj.apartment = apartment.objects.get(pk=id)
+                obj.owner = apartment.objects.get(pk=id).building.owner
+                obj.amount = request.POST['amount']
+                if request.POST['ramount']:
+                    obj.remaining_amount = request.POST['ramount']
+                else:
+                    obj.remaining_amount = 0
+                obj.payment_method = request.POST['payment']
+                if (request.POST['payment'] == "Transfer"):
+                    obj.bank_of_transfer = request.POST['bank']
+                    obj.transfer_date = request.POST['trans_date']
+                obj.from_date = request.POST['fdate']
+                obj.to_date = request.POST['tdate']
+                if request.POST['note']:
+                    obj.note = request.POST['note']
+                temp_len_inv = len(invoice.objects.filter(is_deleted=False,owner=obj.owner))
+                if temp_len_inv > 0:
+                    obj.invoice_number = invoice.objects.filter(is_deleted=False,owner=obj.owner).order_by("-invoice_number")[0].invoice_number + 1
+                obj.other_payment = True
+                if request.POST['type'] == "Other":
+                    obj.payment_type = request.POST['type-other']
+                else:
+                    obj.payment_type = request.POST['type']
+                obj.save()
+                return redirect("/other-invoices/{}".format(id))
             else:
                 context['message'] = "Entered data is not valid."
         return render(request,template,context)
@@ -779,9 +855,15 @@ def owner_report(request,id):
         limits = date_col_rows_inv[i%2]
         for j,r in zip(inv_data,range(limits['row_start']+offset,limits['row_end']+1+offset)):
             cell = worksheet.cell(row=r,column=limits['col_start'])
-            cell.value = j.apartment.aprt_number
+            try:
+                cell.value = j.apartment.aprt_number
+            except:
+                cell.value = " "
             cell = worksheet.cell(row=r,column=limits['col_start']+1)
-            cell.value = j.apartment.building.name
+            try:
+                cell.value = j.apartment.building.name
+            except:
+                cell.value = " "
             if j.payment_method == 'Cash':
                 cell = worksheet.cell(row=r,column=limits['col_start']+2)
                 cell.value = j.amount
@@ -813,7 +895,7 @@ def owner_report(request,id):
 
 @login_required(login_url='/')
 def check_download_allowed(request,id):
-    user_perms = user_permission.objects.filter(user=request.user)
+    user_perms = user_profile.objects.filter(user=request.user)
     if (len(user_perms) > 0):
         owner_obj = invoice_owner.objects.get(pk=id)
         obj = user_perms[0]
@@ -829,7 +911,7 @@ def check_download_allowed(request,id):
     
 @login_required(login_url='/')
 def check_delete_allowed(request,id,type_of):
-    user_perms = user_permission.objects.filter(user=request.user)
+    user_perms = user_profile.objects.filter(user=request.user)
     if (len(user_perms) > 0):
         if type_of == "m":
             obj = maintenance_invoice.objects.get(pk=id)

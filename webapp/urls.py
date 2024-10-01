@@ -33,7 +33,9 @@ urlpatterns = [
     path("delete-apartment/<int:id>",views.delete_apartment,name="delete-apartment"),
 
     path("invoices/<int:id>",views.invoices,name="invoices"),
+    path("other-invoices/<int:id>",views.other_invoices,name="other-invoices"),
     path("new-invoice-form/<int:id>",views.invoice_form,name="invoice-form"),
+    path("new-other-invoice-form/<int:id>",views.other_invoice_form,name="other-invoice-form"),
 
     path("print-invoice/<int:id>",views.print_invoice,name="print-invoice"),
     path("delete-invoice/<int:id>",views.delete_invoice,name="delete-invoice"),

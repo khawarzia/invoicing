@@ -2,7 +2,7 @@
     <html lang="en">
 
         <head>
-            <title>Building Management - Invoices</title>
+            <title>Building Management - Other Invoices</title>
             <meta charset="utf-8">
             <meta name="viewport" content="width=device-width, initial-scale=1">
             <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css">
@@ -83,10 +83,6 @@
                                     <button class="btn btn-primary" onclick="window.location.href='/previous-tenants/{{aobj.id}}/i'" type="button">
                                         Tenant History
                                     </button>
-                                    <br><br>
-                                    <button class="btn btn-primary" onclick="window.location.href='/other-invoices/{{aobj.id}}'" type="button">
-                                        Other Payments
-                                    </button>
                                     <br>
                                 </form>
                             </div>
@@ -95,7 +91,7 @@
                     <div class="col-lg-9">
                         <div class="card">
                             <div class="card-head text-center">
-                                <a href="{% url 'apartments' aobj.building.id %}"><-Back</a>&ensp;&ensp;&ensp; Building - {{aobj.building.name}} &ensp; Apartment - {{aobj.aprt_number}} {% if aobj.tenant %}&ensp; Tenant - {{aobj.tenant.name}}{% endif %}<br><br>
+                                <a href="{% url 'invoices' aobj.id %}"><-Back</a>&ensp;&ensp;&ensp; Building - {{aobj.building.name}} &ensp; Apartment - {{aobj.aprt_number}} {% if aobj.tenant %}&ensp; Tenant - {{aobj.tenant.name}}{% endif %}<br><br>
 
                                 <form method="post" id="sort-form">{% csrf_token %}</form>
                                 <div class="form-inline">
@@ -219,6 +215,7 @@
                                             <td>To</td>
                                             <td>From</td>
                                             <td>Issued Date</td>
+                                            <td>Type</td>
                                             <td>Invoice Number</td>
                                             <td>Amount</td>
                                             <td>Issued By</td>
@@ -231,6 +228,7 @@
                                                 <td>{{i.to_date | date:'d-m-y'}}</td>
                                                 <td>{{i.from_date | date:'d-m-y'}}</td>
                                                 <td>{{i.today_date | date:'d-m-y'}}</td>
+                                                <td>{{i.payment_type}}</td>
                                                 <td>{{i.invoice_number}}</td>
                                                 <td>{{i.amount}}</td>
                                                 <td>{{i.user.username}}</td>
@@ -250,7 +248,7 @@
                                 <div class="row justify-content-around">
                                     <div class="col-lg-8">
                                         {% if type_of_user or write_priv %}
-                                            <button class="btn btn-primary" type="button" onclick="window.location.href='/new-invoice-form/{{aobj.id}}'">
+                                            <button class="btn btn-primary" type="button" onclick="window.location.href='/new-other-invoice-form/{{aobj.id}}'">
                                                 Add New Invoice For This Apartment
                                             </button>    
                                         {% endif %}
