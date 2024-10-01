@@ -3,3 +3,4 @@ PyPDF2==2.10.0
 reportlab==3.6.11
 arabic_reshaper
 openpyxl
+python-bidi
