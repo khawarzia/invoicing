@@ -469,7 +469,10 @@ def print_invoice(request,id):
             p.drawString(360, 740-offset+remain_offset, obj[0].apartment.contract_number)
             p.drawString(270, 720-offset+remain_offset, get_display(arabic_reshaper.reshape(obj[0].apartment.name)) )
             p.drawString(270, 680-offset+remain_offset, "{}".format(obj[0].amount))
-            p.drawString(260, 640-offset+remain_offset, get_display(arabic_reshaper.reshape(aprt_types[obj[0].apartment.type_of])))
+            if obj[0].other_payment:
+                p.drawString(260, 640-offset+remain_offset, obj[0].payment_type)
+            else:
+                p.drawString(260, 640-offset+remain_offset, get_display(arabic_reshaper.reshape(aprt_types[obj[0].apartment.type_of])))
             p.drawString(280, 600-offset+remain_offset, "{}".format(obj[0].apartment.aprt_number))
             p.drawString(270, 560-offset+remain_offset, "{}".format(get_display(arabic_reshaper.reshape(obj[0].apartment.building.name))))
             p.setFont('Arabic', 10)
@@ -549,7 +552,10 @@ def print_invoice(request,id):
         p.drawString(270, 680+remain_offset, "{}".format(obj[0].amount))
         #p.drawString(270, 680-offset+remain_offset, "{}".format(obj[0].amount))
 
-        p.drawString(260, 640+remain_offset, get_display(arabic_reshaper.reshape(aprt_types[obj[0].apartment.type_of])))
+        if obj[0].other_payment:
+            p.drawString(260, 640+remain_offset, obj[0].payment_type)
+        else:
+            p.drawString(260, 640+remain_offset, get_display(arabic_reshaper.reshape(aprt_types[obj[0].apartment.type_of])))
         #p.drawString(260, 640-offset+remain_offset, get_display(arabic_reshaper.reshape(aprt_types[obj[0].apartment.type_of])))
 
         p.drawString(280, 600+remain_offset, "{}".format(obj[0].apartment.aprt_number))
