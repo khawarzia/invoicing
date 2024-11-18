@@ -318,7 +318,7 @@ def invoice_form(request,id):
     if id:
         template = "new_invoice_form.html"
         context = {'id':id}
-        objs = reversed(list(invoice.objects.filter(is_deleted=False,apartment=apartment.objects.get(pk=id))))
+        objs = reversed(list(invoice.objects.filter(is_deleted=False,apartment=apartment.objects.get(pk=id),other_payment=False)))
         temp = []
         temp1 = []
         tempcount = 0
@@ -364,7 +364,7 @@ def other_invoice_form(request,id):
     if id:
         template = "new_other_invoice_form.html"
         context = {'id':id}
-        objs = reversed(list(invoice.objects.filter(is_deleted=False,apartment=apartment.objects.get(pk=id))))
+        objs = reversed(list(invoice.objects.filter(is_deleted=False,apartment=apartment.objects.get(pk=id),other_payment=True)))
         temp = []
         temp1 = []
         tempcount = 0

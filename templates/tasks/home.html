@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+    <html lang="en">
+
+        <head>
+            <title>Building Management - Tasks</title>
+            <meta charset="utf-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1">
+            <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css">
+            <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+            <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js"></script>
+            <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">        
+        </head>
+        <body>
+            <br><br>
+            <div class="container">
+                <div class="row">
+                    <div class="col-3">
+                        <button class="btn btn-primary" type="button" onclick="window.location.href='/'" style="width: 100%;">
+                            <- Home
+                        </button>
+                        <br><br>
+                        <button class="btn btn-primary" type="button" onclick="window.location.href='/create-task'" style="width: 100%;">
+                            Create New Task
+                        </button>
+                        {% if show == 2 or show == 3 %}
+                            <br><br>
+                            <button class="btn btn-primary" type="button" onclick="window.location.href='/task-dashboard/1'" style="width: 100%;">
+                                Active Tasks
+                            </button>
+                        {% endif %}
+                        {% if show == 1 or show == 3 %}
+                            <br><br>
+                            <button class="btn btn-primary" type="button" onclick="window.location.href='/task-dashboard/2'" style="width: 100%;">
+                                Closed Tasks
+                            </button>
+                        {% endif %}
+                        {% if show == 1 or show == 2 %}
+                            <br><br>
+                            <button class="btn btn-primary" type="button" onclick="window.location.href='/task-dashboard/3'" style="width: 100%;">
+                                Created Tasks
+                            </button>
+                            <br><br>
+                            <div class="card text-center">
+                                <div class="card-head">
+                                    <strong>
+                                        Filters / Sort
+                                    </strong>
+                                </div>
+                                <div class="card-body">
+                                    <select class="form-control" id="priority" onchange="applyFilters();">
+                                        <option value="" selected>-Select Priority-</option>
+                                        <option value="P1">P1</option>
+                                        <option value="P2">P2</option>
+                                        <option value="P3">P3</option>
+                                    </select><br>
+
+                                    <select class="form-control" id="dt" onchange="applySort();">
+                                        <option value="" selected disabled>-Sort by {% if show == 1 %}Deadline{% else %}Completion{% endif %}-</option>
+                                        <option value="as">Latest First</option>
+                                        <option value="ds">Latest Last</option>
+                                    </select><br>
+
+                                    <button class="btn btn-primary" type="button" id="reset" onclick="window.location.href=window.location.href;">
+                                        Reset
+                                    </button>
+                                </div>
+                            </div>
+                        {% endif %}
+                    </div>
+                    <script>
+                        function applyFilters(){
+                            pri = document.getElementById("priority").value;
+                            eles = document.getElementsByClassName("task-elements");
+                            if (pri){
+                                for (i = 0 ; i < eles.length ; i++){
+                                    if (eles[i].getAttribute("name") == pri){
+                                        eles[i].hidden = false;
+                                    }
+                                    else{
+                                        eles[i].hidden = true;
+                                    }
+                                }
+                            }
+                            else{
+                                for (i = 0 ; i < eles.length ; i++){
+                                    eles[i].hidden = false;
+                                }
+                            }
+                        }
+
+                        function applySort(){
+                            sort = document.getElementById("dt").value;
+                            if (sort){
+                                eles = document.getElementsByClassName("task-elements");
+                                items = [];
+                                for (i = 0 ; i < eles.length ; i++){
+                                    items.push({
+                                        item:eles[i], datetime:eles[i].getAttribute("data-datetime").replace(" ","T")
+                                    });
+                                }
+                                n = items.length;
+                                for (i = 0; i < n - 1; i++) {
+                                    swapped = false;
+                                    for (j = 0; j < n - i - 1; j++) {
+                                        if (sort == "ds"){
+                                            if (new Date(items[j].datetime) < new Date(items[j + 1].datetime)) {
+                                                tempele = items[j].item;
+                                                tempdt = items[j].datetime;
+                                                items[j].item = items[j + 1].item;
+                                                items[j].datetime = items[j + 1].datetime;
+                                                items[j + 1].item = tempele;
+                                                items[j + 1].datetime = tempdt;
+                                                swapped = true;
+                                            }
+                                        }
+                                        if (sort == "as"){
+                                            if (new Date(items[j].datetime) > new Date(items[j + 1].datetime)) {
+                                                tempele = items[j].item;
+                                                tempdt = items[j].datetime;
+                                                items[j].item = items[j + 1].item;
+                                                items[j].datetime = items[j + 1].datetime;
+                                                items[j + 1].item = tempele;
+                                                items[j + 1].datetime = tempdt;
+                                                swapped = true;
+                                            }
+                                        }
+                                    }
+                                    if (!swapped){
+                                        break;
+                                    }
+                                }
+                                taskcont = document.getElementById("tasks-container");
+                                taskcont.innerHTML = "";
+                                temp = "";
+                                for (i = 0 ; i < items.length ; i++){
+                                    temp = temp + items[i].item.outerHTML;
+                                }
+                                taskcont.innerHTML = temp;
+                                applyFilters();
+                            }
+                        }
+                    </script>
+                    <div class="col-9">
+                        <div class="row">
+                            <div class="col-12">
+                                <div class="card border-0">
+                                    <div class="card-head text-center">
+                                        {% if show == 1 %}My Active Tasks{% endif %}
+                                        {% if show == 2 %}My Closed Tasks{% endif %}
+                                        {% if show == 3 %}Tasks Created by Me{% endif %} 
+                                        <hr>
+                                    </div>
+                                    <div class="card-body" id="tasks-container">
+                                        {% for i in tasks %}
+                                            <div name="{{i.priority}}" class="task-elements" {% if show == 1 %} data-datetime='{{i.deadline|date:"Y-m-d 00:00:00"}}' {% else %} data-datetime='{{i.last_updated_at|date:"Y-m-d H:i:s"}}' {% endif %}>
+                                                <div class="card" style="border-width: 3px; border-color: lightgreen; padding: 4px;">
+                                                    <div class="row">
+                                                        <div class="col-6">
+                                                            <strong>Task Id</strong>  -  {{i.id}} <br>
+                                                            <strong>Assigned To</strong>  -  {{i.assigned}} <br>
+                                                            <strong>Status</strong>  -  {{i.status}} {% if i.status == "Closed" %} on {{i.last_updated_at}} {% endif %} <br>
+                                                            <strong>Priority</strong>  -  {{i.priority}} <br>
+                                                            <strong>Last Update</strong>  -  {{i.get_latest_update}}
+                                                        </div>
+                                                        <div class="col-6">
+                                                            <strong>{% if show == 1 %} data-datetime='{{i.deadline|date:"Y-m-d 00:00:00"}}' {% else %} data-datetime='{{i.last_updated_at|date:"Y-m-d H:i:s"}}' {% endif %}</strong>
+                                                            <br><strong>Task Description</strong>  -  {{i.desc}}
+                                                        </div>
+                                                        <div class="col-12">
+                                                            <hr style="border-color: lightgreen; width: 80%;">
+                                                            <div class="row">
+                                                                <div class="col-4">
+                                                                    <button class="btn btn-primary" type="button" onclick="window.location.href='/task-detail/{{i.id}}/{{show}}'" style="width: 100%;">
+                                                                        Detailed View
+                                                                    </button>
+                                                                </div>
+                                                                {% if i.status == "Active" %}
+                                                                    <div class="col-4">
+
+                                                                    </div>
+                                                                    <div class="col-4">
+                                                                        <button class="btn btn-primary" type="button" onclick="window.location.href='/task-close/{{i.id}}/{{show}}'" style="width: 100%;">
+                                                                            Close Task
+                                                                        </button>
+                                                                    </div>
+                                                                {% endif %}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div><br>
+                                            </div>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </body>
+    </html>

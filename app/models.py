@@ -15,7 +15,7 @@ class invoice_owner(models.Model):
         return self.name
 
 class user_profile(models.Model):
-    user = models.ForeignKey(User,on_delete=models.CASCADE)
+    user = models.OneToOneField(User,on_delete=models.CASCADE)
     type_of_user = models.CharField(max_length=20,choices=type_of_user_choices,default='d')
     download_report_allowed = models.BooleanField(default=True)
     delete_invoice_allowed = models.BooleanField(default=True)

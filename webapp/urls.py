@@ -18,6 +18,7 @@ from django.contrib import admin
 from django.urls import path
 from django.conf import settings
 from django.conf.urls.static import static
+from tasks import views as taskViews
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -72,6 +73,11 @@ urlpatterns = [
     path("search-apartment-by-contract",views.search_apartment_by_contract,name='search-apartment-by-contract'),
 
     path("get-to-date-for-invoice/<int:id>/<int:amt>",views.get_to_date_for_invoice),
+
+    path("task-dashboard/<int:show>",taskViews.home,name="task-dashboard"),
+    path("create-task",taskViews.create_task,name="create-task"),
+    path("task-detail/<int:id>/<int:show>",taskViews.task_detail,name="task-detail"),
+    path("task-close/<int:id>/<int:show>",taskViews.task_close,name="task-close"),
 ]
 
 if settings.DEBUG:
